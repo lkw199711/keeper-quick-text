@@ -3,8 +3,8 @@ import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
 import { createServer } from 'node:http';
 import { extname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { REPOSITORY_CATALOG, findRepository } from '../public/route-catalog.js';
 import {
-  buildRepositoryTemplates,
   createHostsDocument,
   createOutputFilename,
   parseHostsDocument
@@ -13,7 +13,6 @@ import {
 const PROJECT_ROOT = resolve(fileURLToPath(new URL('..', import.meta.url)));
 const PUBLIC_DIR = join(PROJECT_ROOT, 'public');
 const HOSTS_DIR = join(PROJECT_ROOT, 'hosts');
-const TEMPLATE_FILE = join(HOSTS_DIR, '标准测试环境.hosts');
 const PORT = Number.parseInt(process.env.PORT || '4173', 10);
 const HOST = process.env.HOST || '127.0.0.1';
 const MAX_BODY_BYTES = 16 * 1024;
@@ -27,7 +26,6 @@ const MIME_TYPES = {
 
 export function createAppServer(options = {}) {
   const hostsDir = options.hostsDir || HOSTS_DIR;
-  const templateFile = options.templateFile || TEMPLATE_FILE;
   const publicDir = options.publicDir || PUBLIC_DIR;
 
   return createServer(async (request, response) => {
@@ -35,17 +33,17 @@ export function createAppServer(options = {}) {
       const url = new URL(request.url, 'http://localhost');
 
       if (request.method === 'GET' && url.pathname === '/api/config') {
-        return sendJson(response, 200, await loadConfig({ hostsDir, templateFile }));
+        return sendJson(response, 200, await loadConfig(hostsDir));
       }
 
       if (request.method === 'POST' && url.pathname === '/api/hosts') {
         const payload = await readJsonBody(request);
-        const config = await loadConfig({ hostsDir, templateFile });
-        const repository = config.repositories.find((item) => item.id === payload.repositoryId);
+        const repository = findRepository(payload.repositoryId);
+        const moduleIds = Array.isArray(payload.moduleIds) ? payload.moduleIds : [];
         const ip = String(payload.ip || '').trim();
         const domain = String(payload.domain || '').trim().toLowerCase();
         const now = new Date();
-        const content = createHostsDocument({ repository, ip, domain, generatedAt: now });
+        const content = createHostsDocument({ repository, moduleIds, ip, domain, generatedAt: now });
         const filename = createOutputFilename(repository.id, domain, now);
 
         await mkdir(hostsDir, { recursive: true });
@@ -71,13 +69,11 @@ export function createAppServer(options = {}) {
   });
 }
 
-async function loadConfig({ hostsDir, templateFile }) {
-  const templateContent = await readFile(templateFile, 'utf8');
-  const repositories = buildRepositoryTemplates(templateContent);
+async function loadConfig(hostsDir) {
   const history = await loadHistory(hostsDir);
-  const ipOptions = new Set(repositories.map((item) => item.defaultIp));
+  const ipOptions = new Set(REPOSITORY_CATALOG.map((item) => item.defaultIp));
   const domainOptions = Object.fromEntries(
-    repositories.map((item) => [item.id, new Set([item.defaultDomain])])
+    REPOSITORY_CATALOG.map((item) => [item.id, new Set([item.defaultDomain])])
   );
 
   for (const item of history) {
@@ -86,7 +82,6 @@ async function loadConfig({ hostsDir, templateFile }) {
   }
 
   return {
-    repositories,
     ipOptions: [...ipOptions],
     domainOptions: Object.fromEntries(
       Object.entries(domainOptions).map(([key, values]) => [key, [...values]])

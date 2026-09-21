@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="从标准测试环境模板生成项目 hosts 文件">
+    <meta name="description" content="按仓库和业务模块生成项目 hosts 文件">
     <title>Keeper Hosts Builder</title>
     <link rel="stylesheet" href="/styles.css">
   </head>
@@ -14,11 +14,11 @@
         <div>
           <p class="eyebrow">KEEPER TOOLKIT</p>
           <h1>Hosts Builder</h1>
-          <p class="hero-copy">选择仓库，确认部署地址，一键生成带完整路由说明的 hosts 文件。</p>
+          <p class="hero-copy">选择仓库和业务模块，确认部署地址，生成本次需要的 hosts 文件。</p>
         </div>
         <div class="template-chip">
           <span class="status-dot"></span>
-          标准测试环境.hosts
+          前端路由字典
         </div>
       </header>
 
@@ -28,17 +28,35 @@
             <span class="step-number">01</span>
             <div>
               <h2 id="repo-heading">选择仓库</h2>
-              <p>路由会从标准测试环境模板的对应分段自动提取。</p>
+              <p>选择本次快速部署对应的项目仓库。</p>
             </div>
           </div>
           <div id="repository-list" class="repository-grid" aria-live="polite">
-            <div class="loading-card">正在读取仓库模板…</div>
+            <div class="loading-card">正在读取仓库字典…</div>
           </div>
+        </section>
+
+        <section class="step-section" aria-labelledby="module-heading">
+          <div class="step-heading">
+            <span class="step-number">02</span>
+            <div>
+              <h2 id="module-heading">选择业务模块</h2>
+              <p>审核和查询属于同一个模块；只生成本次勾选模块的路由。</p>
+            </div>
+            <div class="selection-actions">
+              <button id="select-all-button" class="text-button" type="button" disabled>全选</button>
+              <button id="clear-all-button" class="text-button" type="button" disabled>清空</button>
+            </div>
+          </div>
+          <div id="module-list" class="module-grid" aria-live="polite">
+            <div class="loading-card">请先选择仓库</div>
+          </div>
+          <p id="module-summary" class="selection-summary">已选择 0 个模块</p>
         </section>
 
         <section class="step-section" aria-labelledby="address-heading">
           <div class="step-heading">
-            <span class="step-number">02</span>
+            <span class="step-number">03</span>
             <div>
               <h2 id="address-heading">设置部署地址</h2>
               <p>可选择历史记录，也可以直接输入新的 IP 和域名。</p>
@@ -62,7 +80,7 @@
 
         <section class="step-section preview-section" aria-labelledby="preview-heading">
           <div class="step-heading">
-            <span class="step-number">03</span>
+            <span class="step-number">04</span>
             <div>
               <h2 id="preview-heading">确认并生成</h2>
               <p>核对替换结果后，文件将写入项目的 hosts 目录。</p>
@@ -96,11 +114,12 @@
         <h2>确认生成 hosts 文件？</h2>
         <dl class="confirm-list">
           <div><dt>仓库</dt><dd id="confirm-repository">—</dd></div>
+          <div><dt>模块</dt><dd id="confirm-modules">—</dd></div>
           <div><dt>IP</dt><dd id="confirm-ip">—</dd></div>
           <div><dt>域名</dt><dd id="confirm-domain">—</dd></div>
           <div><dt>路由</dt><dd id="confirm-routes">—</dd></div>
         </dl>
-        <p class="dialog-note">将创建新文件，不会修改标准测试环境模板。</p>
+        <p class="dialog-note">将创建新文件，不会修改前端路由字典。</p>
         <div class="dialog-actions">
           <button class="secondary-button" value="cancel">返回修改</button>
           <button id="confirm-button" class="primary-button" value="default">生成文件</button>

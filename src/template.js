@@ -1,25 +1,5 @@
 import { isIP } from 'node:net';
-
-export const REPOSITORIES = [
-  {
-    id: 'keeper-sell-supplier',
-    name: 'keeper-sell-supplier',
-    description: '自营 / POP 入驻、资质与单品审核',
-    templateDomain: 'sell-supplier.jdtest.net'
-  },
-  {
-    id: 'keeper-qua-audit',
-    name: 'keeper-qua-audit',
-    description: 'POP 品牌与类目审核',
-    templateDomain: 'qua-audit.jdtest.net'
-  },
-  {
-    id: 'keeper-second-review',
-    name: 'keeper-second-review',
-    description: '门店、商家、视频与装修审核',
-    templateDomain: 'second-review.jdtest.net'
-  }
-];
+import { REPOSITORY_CATALOG } from '../public/route-catalog.js';
 
 const HOSTNAME_PATTERN = /^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/iu;
 
@@ -63,27 +43,8 @@ export function parseHostsDocument(content) {
   return { metadata, sections };
 }
 
-export function buildRepositoryTemplates(content) {
-  const { sections } = parseHostsDocument(content);
-
-  return REPOSITORIES.map((repository) => {
-    const section = sections.find((item) => item.domain === repository.templateDomain);
-    if (!section) {
-      throw new Error(`模板中缺少仓库 ${repository.name} 的域名 ${repository.templateDomain}`);
-    }
-
-    return {
-      ...repository,
-      defaultIp: section.ip,
-      defaultDomain: section.domain,
-      routeCount: section.routes.length,
-      routes: section.routes
-    };
-  });
-}
-
-export function createHostsDocument({ repository, ip, domain, generatedAt = new Date() }) {
-  validateGenerationInput({ repository, ip, domain });
+export function createHostsDocument({ repository, moduleIds, ip, domain, generatedAt = new Date() }) {
+  const modules = validateGenerationInput({ repository, moduleIds, ip, domain });
 
   const timestamp = new Intl.DateTimeFormat('zh-CN', {
     timeZone: 'Asia/Shanghai',
@@ -99,23 +60,35 @@ export function createHostsDocument({ repository, ip, domain, generatedAt = new 
   const lines = [
     '# keeper-quick-text',
     `# 仓库: ${repository.name}`,
+    `# 模块: ${modules.map((module) => module.name).join('、')}`,
     `# 生成时间: ${timestamp}`,
-    '# 模板: 标准测试环境.hosts',
+    '# 路由字典: public/route-catalog.js',
     '',
     `${ip}\t\t${domain}`
   ];
 
-  for (const route of repository.routes) {
-    if (route.label) lines.push(`#${route.label}`);
-    lines.push(`#${replaceUrlDomain(route.url, domain)}`);
+  for (const module of modules) {
+    for (const route of module.routes) {
+      lines.push(`#${route.name}`);
+      lines.push(`#${new URL(route.path, `https://${domain}`).toString()}`);
+    }
   }
 
   return `${lines.join('\n')}\n`;
 }
 
-export function validateGenerationInput({ repository, ip, domain }) {
-  if (!repository || !REPOSITORIES.some((item) => item.id === repository.id)) {
+export function validateGenerationInput({ repository, moduleIds, ip, domain }) {
+  if (!repository || !REPOSITORY_CATALOG.some((item) => item.id === repository.id)) {
     throw new Error('请选择有效仓库。');
+  }
+  if (!Array.isArray(moduleIds) || moduleIds.length === 0) {
+    throw new Error('请至少选择一个模块。');
+  }
+
+  const requestedIds = new Set(moduleIds);
+  const modules = repository.modules.filter((module) => requestedIds.has(module.id));
+  if (modules.length !== requestedIds.size) {
+    throw new Error('选择的模块不属于当前仓库。');
   }
   if (!isIP(ip)) {
     throw new Error('请输入有效的 IPv4 或 IPv6 地址。');
@@ -123,6 +96,8 @@ export function validateGenerationInput({ repository, ip, domain }) {
   if (!isHostname(domain)) {
     throw new Error('请输入有效域名，不要包含协议、端口或路径。');
   }
+
+  return modules;
 }
 
 export function isHostname(value) {
@@ -149,10 +124,4 @@ function parseHostEntry(line) {
   const [ip, domain, ...rest] = line.split(/\s+/u);
   if (rest.length > 0 || !isIP(ip) || !isHostname(domain)) return undefined;
   return { ip, domain: domain.toLowerCase() };
-}
-
-function replaceUrlDomain(value, domain) {
-  const url = new URL(value);
-  url.hostname = domain;
-  return url.toString();
 }

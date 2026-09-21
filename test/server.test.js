@@ -1,21 +1,16 @@
 import assert from 'node:assert/strict';
-import { copyFile, mkdir, mkdtemp, readFile, rm } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
-import { fileURLToPath } from 'node:url';
 import { createAppServer } from '../src/server.js';
-
-const sourceTemplate = fileURLToPath(new URL('../hosts/标准测试环境.hosts', import.meta.url));
 
 test('Web API 返回模板配置并在 hosts 目录生成文件', async (context) => {
   const temporaryRoot = await mkdtemp(join(tmpdir(), 'keeper-quick-text-'));
   const hostsDir = join(temporaryRoot, 'hosts');
-  const templateFile = join(hostsDir, '标准测试环境.hosts');
   await mkdir(hostsDir);
-  await copyFile(sourceTemplate, templateFile);
 
-  const server = createAppServer({ hostsDir, templateFile });
+  const server = createAppServer({ hostsDir });
   await new Promise((resolveListen) => server.listen(0, '127.0.0.1', resolveListen));
   context.after(async () => {
     await new Promise((resolveClose) => server.close(resolveClose));
@@ -28,13 +23,15 @@ test('Web API 返回模板配置并在 hosts 目录生成文件', async (context
   const config = await configResponse.json();
 
   assert.equal(configResponse.status, 200);
-  assert.equal(config.repositories.length, 3);
+  assert.ok(config.ipOptions.includes('6.120.39.72'));
+  assert.ok(config.domainOptions['keeper-qua-audit'].includes('qua-audit.jdtest.net'));
 
   const createResponse = await fetch(`${baseUrl}/api/hosts`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       repositoryId: 'keeper-qua-audit',
+      moduleIds: ['pop-brand'],
       ip: '10.2.3.4',
       domain: 'qua-preview.example.com'
     })
@@ -50,11 +47,9 @@ test('Web API 返回模板配置并在 hosts 目录生成文件', async (context
 test('Web API 拒绝未知仓库和非法地址', async (context) => {
   const temporaryRoot = await mkdtemp(join(tmpdir(), 'keeper-quick-text-invalid-'));
   const hostsDir = join(temporaryRoot, 'hosts');
-  const templateFile = join(hostsDir, '标准测试环境.hosts');
   await mkdir(hostsDir);
-  await copyFile(sourceTemplate, templateFile);
 
-  const server = createAppServer({ hostsDir, templateFile });
+  const server = createAppServer({ hostsDir });
   await new Promise((resolveListen) => server.listen(0, '127.0.0.1', resolveListen));
   context.after(async () => {
     await new Promise((resolveClose) => server.close(resolveClose));
@@ -67,6 +62,7 @@ test('Web API 拒绝未知仓库和非法地址', async (context) => {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       repositoryId: 'unknown-repository',
+      moduleIds: ['unknown-module'],
       ip: 'not-an-ip',
       domain: 'https://invalid.example.com'
     })
