@@ -90,6 +90,17 @@ h1 {
   white-space: nowrap;
 }
 
+.status-chips {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.mode-chip[data-mode="download"] .status-dot { background: #3c7edb; box-shadow: 0 0 0 4px rgba(60, 126, 219, 0.14); }
+.mode-chip[data-mode="server"] .status-dot { background: #d18b22; box-shadow: 0 0 0 4px rgba(209, 139, 34, 0.14); }
+.mode-chip[data-mode="both"] .status-dot { background: #8b5bc7; box-shadow: 0 0 0 4px rgba(139, 91, 199, 0.14); }
+
 .status-dot {
   width: 8px;
   height: 8px;
@@ -461,7 +472,7 @@ pre {
 @media (max-width: 760px) {
   .page-shell { width: min(100% - 28px, 620px); padding-top: 28px; }
   .hero { grid-template-columns: auto 1fr; }
-  .template-chip { grid-column: 1 / -1; width: fit-content; }
+  .status-chips { grid-column: 1 / -1; align-items: flex-start; }
   .repository-grid, .module-grid, .field-grid { grid-template-columns: 1fr; }
   .repository-card { min-height: 132px; }
   .step-heading { flex-wrap: wrap; }

@@ -16,9 +16,15 @@
           <h1>Hosts Builder</h1>
           <p class="hero-copy">选择仓库和业务模块，确认部署地址，生成本次需要的 hosts 文件。</p>
         </div>
-        <div class="template-chip">
-          <span class="status-dot"></span>
-          前端路由字典
+        <div class="status-chips">
+          <div class="template-chip">
+            <span class="status-dot"></span>
+            前端路由字典
+          </div>
+          <div id="mode-chip" class="template-chip mode-chip">
+            <span class="status-dot"></span>
+            <span id="mode-label">读取运行模式…</span>
+          </div>
         </div>
       </header>
 
@@ -83,7 +89,7 @@
             <span class="step-number">04</span>
             <div>
               <h2 id="preview-heading">确认并生成</h2>
-              <p>核对替换结果后，文件将写入项目的 hosts 目录。</p>
+              <p id="output-description">核对替换结果后生成 hosts 文件。</p>
             </div>
           </div>
           <div class="preview-card">
@@ -99,7 +105,7 @@
           <div class="action-row">
             <p id="message" class="message" role="status" aria-live="polite"></p>
             <button id="generate-button" class="primary-button" type="button" disabled>
-              <span>确认生成文件</span>
+              <span id="generate-action-label">确认生成文件</span>
               <span aria-hidden="true">→</span>
             </button>
           </div>
@@ -119,7 +125,7 @@
           <div><dt>域名</dt><dd id="confirm-domain">—</dd></div>
           <div><dt>路由</dt><dd id="confirm-routes">—</dd></div>
         </dl>
-        <p class="dialog-note">将创建新文件，不会修改前端路由字典。</p>
+        <p id="dialog-note" class="dialog-note">将创建新文件，不会修改前端路由字典。</p>
         <div class="dialog-actions">
           <button class="secondary-button" value="cancel">返回修改</button>
           <button id="confirm-button" class="primary-button" value="default">生成文件</button>

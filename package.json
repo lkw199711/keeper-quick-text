@@ -11,7 +11,7 @@
     "dev": "node --watch ./src/server.js",
     "cli": "node ./src/cli.js",
     "test": "node --test",
-    "check": "node --check ./src/cli.js && node --check ./src/hosts.js && node --check ./src/template.js && node --check ./src/server.js && node --check ./public/route-catalog.js && node --check ./public/app.js && npm test"
+    "check": "node --check ./src/cli.js && node --check ./src/hosts.js && node --check ./src/template.js && node --check ./src/server.js && node --check ./public/runtime-config.js && node --check ./public/hosts-content.js && node --check ./public/route-catalog.js && node --check ./public/app.js && npm test"
   },
   "engines": {
     "node": ">=18"

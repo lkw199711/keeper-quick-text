@@ -4,7 +4,8 @@
 
 ## 环境要求
 
-- Node.js 18 或更高版本
+- 下载模式线上运行只需要静态 Web 服务器和现代浏览器
+- 服务器保存模式需要 Node.js 18 或更高版本
 - 无第三方运行时依赖
 
 ## Web 页面
@@ -20,13 +21,53 @@ npm start
 3. 选择历史记录或输入新的 IP、域名。
 4. 检查路由预览并确认生成。
 
-新文件写入项目的 `hosts/` 目录，命名格式为：
+默认情况下，新文件由浏览器直接下载，命名格式为：
 
 ```text
 <仓库>-<域名>-<北京时间戳>.hosts
 ```
 
 页面只输出所选模块的路由，并保留名称、路径和查询参数，只替换 IP 与域名。
+
+## 运行模式
+
+在 `public/runtime-config.js` 中修改 `mode`，不需要重新构建前端：
+
+```js
+export const APP_CONFIG = Object.freeze({
+  mode: 'download',
+  apiBaseUrl: '',
+  historyLimit: 20
+});
+```
+
+| mode | 文件去向 | 历史记录 | 是否需要 Node 后端 |
+| --- | --- | --- | --- |
+| `download` | 浏览器下载 | 浏览器 `localStorage` | 否 |
+| `server` | 服务器 `hosts/` | 服务器生成历史 | 是 |
+| `both` | 服务器保存并下载 | 合并浏览器与服务器历史 | 是 |
+
+页面顶部会显示当前运行模式。配置为 `server` 或 `both` 但后端不可用时，页面会明确报错，不会静默切换模式。
+
+### 纯静态部署
+
+保持 `mode: 'download'`，把整个 `public/` 目录内容上传到 Nginx 网站目录即可。例如：
+
+```text
+/var/www/keeper-quick-text/
+├── index.html
+├── app.js
+├── hosts-content.js
+├── route-catalog.js
+├── runtime-config.js
+└── styles.css
+```
+
+无需执行构建命令，也不需要部署 `src/`、`test/` 和 `hosts/`。
+
+### 后端模式
+
+将 `mode` 改为 `server` 或 `both`，部署完整项目并执行 `npm start`。推荐由 Nginx 将页面和 `/api` 代理到同一个域名；如使用同域子路径，可通过 `apiBaseUrl` 配置该路径前缀。
 
 开发时可以启用自动重启：
 

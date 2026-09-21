@@ -1,5 +1,8 @@
 import { isIP } from 'node:net';
+import { createHostsContent } from '../public/hosts-content.js';
 import { REPOSITORY_CATALOG } from '../public/route-catalog.js';
+
+export { createOutputFilename } from '../public/hosts-content.js';
 
 const HOSTNAME_PATTERN = /^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/iu;
 
@@ -45,36 +48,7 @@ export function parseHostsDocument(content) {
 
 export function createHostsDocument({ repository, moduleIds, ip, domain, generatedAt = new Date() }) {
   const modules = validateGenerationInput({ repository, moduleIds, ip, domain });
-
-  const timestamp = new Intl.DateTimeFormat('zh-CN', {
-    timeZone: 'Asia/Shanghai',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: false
-  }).format(generatedAt).replaceAll('/', '-');
-
-  const lines = [
-    '# keeper-quick-text',
-    `# 仓库: ${repository.name}`,
-    `# 模块: ${modules.map((module) => module.name).join('、')}`,
-    `# 生成时间: ${timestamp}`,
-    '# 路由字典: public/route-catalog.js',
-    '',
-    `${ip}\t\t${domain}`
-  ];
-
-  for (const module of modules) {
-    for (const route of module.routes) {
-      lines.push(`#${route.name}`);
-      lines.push(`#${new URL(route.path, `https://${domain}`).toString()}`);
-    }
-  }
-
-  return `${lines.join('\n')}\n`;
+  return createHostsContent({ repository, modules, ip, domain, generatedAt });
 }
 
 export function validateGenerationInput({ repository, moduleIds, ip, domain }) {
@@ -102,21 +76,6 @@ export function validateGenerationInput({ repository, moduleIds, ip, domain }) {
 
 export function isHostname(value) {
   return HOSTNAME_PATTERN.test(String(value).trim());
-}
-
-export function createOutputFilename(repositoryId, domain, date = new Date()) {
-  const timestamp = new Intl.DateTimeFormat('sv-SE', {
-    timeZone: 'Asia/Shanghai',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: false
-  }).format(date).replace(/[-: ]/gu, '');
-
-  return `${repositoryId}-${domain}-${timestamp}.hosts`;
 }
 
 function parseHostEntry(line) {
