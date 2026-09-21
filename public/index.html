@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="从标准测试环境模板生成项目 hosts 文件">
+    <title>Keeper Hosts Builder</title>
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="hero">
+        <div class="brand-mark" aria-hidden="true">K</div>
+        <div>
+          <p class="eyebrow">KEEPER TOOLKIT</p>
+          <h1>Hosts Builder</h1>
+          <p class="hero-copy">选择仓库，确认部署地址，一键生成带完整路由说明的 hosts 文件。</p>
+        </div>
+        <div class="template-chip">
+          <span class="status-dot"></span>
+          标准测试环境.hosts
+        </div>
+      </header>
+
+      <main>
+        <section class="step-section" aria-labelledby="repo-heading">
+          <div class="step-heading">
+            <span class="step-number">01</span>
+            <div>
+              <h2 id="repo-heading">选择仓库</h2>
+              <p>路由会从标准测试环境模板的对应分段自动提取。</p>
+            </div>
+          </div>
+          <div id="repository-list" class="repository-grid" aria-live="polite">
+            <div class="loading-card">正在读取仓库模板…</div>
+          </div>
+        </section>
+
+        <section class="step-section" aria-labelledby="address-heading">
+          <div class="step-heading">
+            <span class="step-number">02</span>
+            <div>
+              <h2 id="address-heading">设置部署地址</h2>
+              <p>可选择历史记录，也可以直接输入新的 IP 和域名。</p>
+            </div>
+          </div>
+          <div class="field-grid">
+            <label class="field">
+              <span>IP 地址</span>
+              <input id="ip-input" name="ip" list="ip-options" placeholder="例如 6.120.39.72" autocomplete="off" disabled>
+              <datalist id="ip-options"></datalist>
+              <small>支持 IPv4 和 IPv6</small>
+            </label>
+            <label class="field">
+              <span>访问域名</span>
+              <input id="domain-input" name="domain" list="domain-options" placeholder="例如 example.jdtest.net" autocomplete="off" disabled>
+              <datalist id="domain-options"></datalist>
+              <small>无需输入 https:// 或路径</small>
+            </label>
+          </div>
+        </section>
+
+        <section class="step-section preview-section" aria-labelledby="preview-heading">
+          <div class="step-heading">
+            <span class="step-number">03</span>
+            <div>
+              <h2 id="preview-heading">确认并生成</h2>
+              <p>核对替换结果后，文件将写入项目的 hosts 目录。</p>
+            </div>
+          </div>
+          <div class="preview-card">
+            <div class="preview-toolbar">
+              <div>
+                <span class="preview-label">文件预览</span>
+                <strong id="preview-summary">请先选择仓库</strong>
+              </div>
+              <span id="route-count" class="route-count">0 条路由</span>
+            </div>
+            <pre id="preview-content" tabindex="0"># 等待选择仓库…</pre>
+          </div>
+          <div class="action-row">
+            <p id="message" class="message" role="status" aria-live="polite"></p>
+            <button id="generate-button" class="primary-button" type="button" disabled>
+              <span>确认生成文件</span>
+              <span aria-hidden="true">→</span>
+            </button>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <dialog id="confirm-dialog" class="confirm-dialog">
+      <form method="dialog">
+        <button class="dialog-close" value="cancel" aria-label="关闭">×</button>
+        <p class="eyebrow">FINAL CHECK</p>
+        <h2>确认生成 hosts 文件？</h2>
+        <dl class="confirm-list">
+          <div><dt>仓库</dt><dd id="confirm-repository">—</dd></div>
+          <div><dt>IP</dt><dd id="confirm-ip">—</dd></div>
+          <div><dt>域名</dt><dd id="confirm-domain">—</dd></div>
+          <div><dt>路由</dt><dd id="confirm-routes">—</dd></div>
+        </dl>
+        <p class="dialog-note">将创建新文件，不会修改标准测试环境模板。</p>
+        <div class="dialog-actions">
+          <button class="secondary-button" value="cancel">返回修改</button>
+          <button id="confirm-button" class="primary-button" value="default">生成文件</button>
+        </div>
+      </form>
+    </dialog>
+
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>
