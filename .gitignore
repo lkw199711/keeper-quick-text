@@ -1,7 +1,5 @@
 node_modules/
 coverage/
-*.hosts
 *.log
 .DS_Store
 .idea/
-.vscode/

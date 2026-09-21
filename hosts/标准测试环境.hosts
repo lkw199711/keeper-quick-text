@@ -1,0 +1,48 @@
+#标准测试环境 2026年09月21日14:12:43  by ext.liangkaiwen8
+6.120.39.72		sell-supplier.jdtest.net
+#自营入驻审核
+#https://sell-supplier.jdtest.net/keeper/seller-supplier/supplier-manage
+#自营入驻查询
+#https://sell-supplier.jdtest.net/keeper/seller-supplier/all-settle-audit
+#自营基本资质审核
+#https://sell-supplier.jdtest.net/keeper/seller-supplier/basicinfo?page=true&tabName=basic_qua_audit
+#自营基本资质查询
+#https://sell-supplier.jdtest.net/keeper/seller-supplier/basicinfo?page=true&tabName=basic_qua_view
+#自营产品线审核
+#https://sell-supplier.jdtest.net/keeper/seller-supplier/productline?page=true&tabName=product_line_audit
+#自营产品线查询
+#https://sell-supplier.jdtest.net/keeper/seller-supplier/productline?page=true&tabName=product_line_view
+#自营单品审核
+#https://sell-supplier.jdtest.net/keeper/seller-supplier/skuQualificaion?page=true&tabName=sku_qua_audit
+#自营单品查询
+#https://sell-supplier.jdtest.net/keeper/seller-supplier/skuQualificaion?page=true&tabName=sku_qua_view
+#pop入驻审核
+#https://sell-supplier.jdtest.net/keeper/seller-supplier/mySettledCredential
+#pop入驻查询
+#https://sell-supplier.jdtest.net/keeper/seller-supplier/settledQuery
+
+6.120.39.72		qua-audit.jdtest.net
+#pop品牌审核
+#https://qua-audit.jdtest.net/keeper/qua-audit/brandAudit
+#pop品牌查询
+#https://qua-audit.jdtest.net/keeper/qua-audit/brandQuery
+#pop类目审核
+#https://qua-audit.jdtest.net/keeper/qua-audit/categoryAudit
+#pop类目查询
+#https://qua-audit.jdtest.net/keeper/qua-audit/categoryQuery
+
+6.120.39.72		second-review.jdtest.net
+#门店资质审核
+#https://second-review.jdtest.net/keeper/takeout/storeQuaAudit
+#门店资质查询
+#https://second-review.jdtest.net/keeper/takeout/storeAuditQuery
+#商家资质审核
+#https://second-review.jdtest.net/keeper/takeout/shopQuaAudit
+#商家资质查询
+#https://second-review.jdtest.net/keeper/takeout/shopAuditQuery
+#lbs视频审核
+#https://second-review.jdtest.net/keeper/takeout/storeVideoAudit
+#门店装修审核
+#https://second-review.jdtest.net/keeper/takeout/renovation
+#门店装修查询
+#https://second-review.jdtest.net/keeper/takeout/renovationQuery
