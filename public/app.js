@@ -40,6 +40,8 @@ const elements = {
   previewSummary: document.querySelector('#preview-summary'),
   previewContent: document.querySelector('#preview-content'),
   routeCount: document.querySelector('#route-count'),
+  copyPreviewButton: document.querySelector('#copy-preview-button'),
+  copyPreviewLabel: document.querySelector('#copy-preview-label'),
   generateButton: document.querySelector('#generate-button'),
   generateActionLabel: document.querySelector('#generate-action-label'),
   outputDescription: document.querySelector('#output-description'),
@@ -88,6 +90,7 @@ function bindEvents() {
   elements.domainInput.addEventListener('input', updatePreview);
   elements.selectAllButton.addEventListener('click', selectAllModules);
   elements.clearAllButton.addEventListener('click', clearAllModules);
+  elements.copyPreviewButton.addEventListener('click', copyPreviewContent);
   elements.generateButton.addEventListener('click', openConfirmation);
   elements.confirmButton.addEventListener('click', (event) => {
     event.preventDefault();
@@ -219,6 +222,7 @@ function updatePreview() {
   const selectionValid = modules.length > 0;
 
   elements.generateButton.disabled = !inputValid || !selectionValid;
+  elements.copyPreviewButton.disabled = false;
   elements.previewSummary.textContent = `${state.repository.name} → ${domain || '等待输入域名'}`;
   elements.routeCount.textContent = `${modules.length} 个模块 · ${countRoutes(modules)} 条路由`;
   elements.previewContent.textContent = createHostsContent({
@@ -237,6 +241,44 @@ function updatePreview() {
   } else {
     showMessage('');
   }
+}
+
+async function copyPreviewContent() {
+  try {
+    await writeClipboardText(elements.previewContent.textContent);
+    elements.copyPreviewLabel.textContent = '已复制';
+    setTimeout(() => {
+      elements.copyPreviewLabel.textContent = '复制内容';
+    }, 1600);
+  } catch {
+    showMessage('复制失败，请手动选中预览内容。', 'error');
+  }
+}
+
+async function writeClipboardText(text) {
+  if (navigator.clipboard?.writeText) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return;
+    } catch {
+      // 某些浏览器暴露了 Clipboard API，但会因权限策略拒绝调用，继续使用兼容方案。
+    }
+  }
+
+  const textarea = document.createElement('textarea');
+  textarea.value = text;
+  textarea.setAttribute('readonly', '');
+  textarea.style.position = 'fixed';
+  textarea.style.opacity = '0';
+  document.body.append(textarea);
+  let copied = false;
+  try {
+    textarea.select();
+    copied = document.execCommand('copy');
+  } finally {
+    textarea.remove();
+  }
+  if (!copied) throw new Error('浏览器不支持复制到剪贴板。');
 }
 
 function openConfirmation() {

@@ -98,7 +98,15 @@
                 <span class="preview-label">文件预览</span>
                 <strong id="preview-summary">请先选择仓库</strong>
               </div>
-              <span id="route-count" class="route-count">0 条路由</span>
+              <div class="preview-toolbar-actions">
+                <span id="route-count" class="route-count">0 条路由</span>
+                <button id="copy-preview-button" class="copy-preview-button" type="button" disabled>
+                  <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16">
+                    <path d="M8 7V5a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2M5 8h9a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-9a2 2 0 0 1 2-2Z"/>
+                  </svg>
+                  <span id="copy-preview-label">复制内容</span>
+                </button>
+              </div>
             </div>
             <pre id="preview-content" tabindex="0"># 等待选择仓库…</pre>
           </div>
