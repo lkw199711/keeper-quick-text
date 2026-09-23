@@ -11,6 +11,7 @@ export function parseHostsDocument(content) {
   const metadata = {};
   let currentSection;
   let pendingLabel = '';
+  let pendingRepositoryId = '';
 
   for (const rawLine of String(content).split(/\r?\n/u)) {
     const line = rawLine.trim();
@@ -21,9 +22,10 @@ export function parseHostsDocument(content) {
 
     const hostEntry = parseHostEntry(line);
     if (hostEntry) {
-      currentSection = { ...hostEntry, routes: [] };
+      currentSection = { ...hostEntry, repositoryId: pendingRepositoryId || undefined, routes: [] };
       sections.push(currentSection);
       pendingLabel = '';
+      pendingRepositoryId = '';
       continue;
     }
 
@@ -32,6 +34,7 @@ export function parseHostsDocument(content) {
     const metadataMatch = comment.match(/^([^:：]+)[:：]\s*(.+)$/u);
     if (metadataMatch && !/^https?:/iu.test(comment)) {
       metadata[metadataMatch[1].trim()] = metadataMatch[2].trim();
+      if (metadataMatch[1].trim() === '仓库段') pendingRepositoryId = metadataMatch[2].trim();
     }
 
     if (!currentSection) continue;
@@ -46,32 +49,50 @@ export function parseHostsDocument(content) {
   return { metadata, sections };
 }
 
-export function createHostsDocument({ repository, moduleIds, ip, domain, generatedAt = new Date() }) {
-  const modules = validateGenerationInput({ repository, moduleIds, ip, domain });
-  return createHostsContent({ repository, modules, ip, domain, generatedAt });
+export function createHostsDocument({ repository, moduleIds, selections, ip, domain, generatedAt = new Date() }) {
+  const validatedSelections = validateGenerationInput({ repository, moduleIds, selections, ip, domain });
+  return createHostsContent({ selections: validatedSelections, ip, domain, generatedAt });
 }
 
-export function validateGenerationInput({ repository, moduleIds, ip, domain }) {
-  if (!repository || !REPOSITORY_CATALOG.some((item) => item.id === repository.id)) {
-    throw new Error('请选择有效仓库。');
+export function validateGenerationInput({ repository, moduleIds, selections, ip, domain }) {
+  const requestedSelections = Array.isArray(selections)
+    ? selections
+    : [{ repositoryId: repository?.id, moduleIds }];
+  const seenRepositoryIds = new Set();
+  const validatedSelections = requestedSelections.map((selection) => {
+    const selectedRepository = REPOSITORY_CATALOG.find((item) => item.id === selection?.repositoryId);
+    if (!selectedRepository || seenRepositoryIds.has(selectedRepository.id)) {
+      throw new Error('请选择有效仓库，且不要重复选择。');
+    }
+    seenRepositoryIds.add(selectedRepository.id);
+
+    const requestedIds = new Set(Array.isArray(selection.moduleIds) ? selection.moduleIds : []);
+    const selectedModules = selectedRepository.modules.filter((module) => requestedIds.has(module.id));
+    if (selectedModules.length !== requestedIds.size) {
+      throw new Error('选择的模块不属于当前仓库或对应仓库。');
+    }
+    return {
+      repository: selectedRepository,
+      modules: selectedModules,
+      ip: String(selection.ip || ip || '').trim(),
+      domain: String(selection.domain || domain || '').trim().toLowerCase()
+    };
+  });
+
+  if (validatedSelections.length === 0) {
+    throw new Error('请至少选择一个仓库。');
   }
-  if (!Array.isArray(moduleIds) || moduleIds.length === 0) {
+  if (validatedSelections.every((selection) => selection.modules.length === 0)) {
     throw new Error('请至少选择一个模块。');
   }
-
-  const requestedIds = new Set(moduleIds);
-  const modules = repository.modules.filter((module) => requestedIds.has(module.id));
-  if (modules.length !== requestedIds.size) {
-    throw new Error('选择的模块不属于当前仓库。');
+  if (validatedSelections.some((selection) => !isIP(selection.ip))) {
+    throw new Error('请为每个仓库输入有效的 IPv4 或 IPv6 地址。');
   }
-  if (!isIP(ip)) {
-    throw new Error('请输入有效的 IPv4 或 IPv6 地址。');
-  }
-  if (!isHostname(domain)) {
-    throw new Error('请输入有效域名，不要包含协议、端口或路径。');
+  if (validatedSelections.some((selection) => !isHostname(selection.domain))) {
+    throw new Error('请为每个仓库输入有效域名，不要包含协议、端口或路径。');
   }
 
-  return modules;
+  return validatedSelections;
 }
 
 export function isHostname(value) {

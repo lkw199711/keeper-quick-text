@@ -48,7 +48,7 @@
             <span class="step-number">01</span>
             <div>
               <h2 id="repo-heading">选择仓库</h2>
-              <p>选择本次快速部署对应的项目仓库。</p>
+              <p>可多选本次快速部署涉及的项目仓库。</p>
             </div>
           </div>
           <div id="repository-list" class="repository-grid" aria-live="polite">
@@ -61,7 +61,7 @@
             <span class="step-number">02</span>
             <div>
               <h2 id="module-heading">选择业务模块</h2>
-              <p>审核和查询属于同一个模块；只生成本次勾选模块的路由。</p>
+              <p>模块会合并展示所有已选仓库；只生成本次勾选模块的路由。</p>
             </div>
             <div class="selection-actions">
               <button id="select-all-button" class="text-button" type="button" disabled>全选</button>
@@ -79,22 +79,11 @@
             <span class="step-number">03</span>
             <div>
               <h2 id="address-heading">设置部署地址</h2>
-              <p>可选择历史记录，也可以直接输入新的 IP 和域名。</p>
+              <p>为每个已选仓库分别设置 IP 和访问域名。</p>
             </div>
           </div>
-          <div class="field-grid">
-            <label class="field">
-              <span>IP 地址</span>
-              <input id="ip-input" name="ip" list="ip-options" placeholder="例如 6.120.39.72" autocomplete="off" disabled>
-              <datalist id="ip-options"></datalist>
-              <small>支持 IPv4 和 IPv6</small>
-            </label>
-            <label class="field">
-              <span>访问域名</span>
-              <input id="domain-input" name="domain" list="domain-options" placeholder="例如 example.jdtest.net" autocomplete="off" disabled>
-              <datalist id="domain-options"></datalist>
-              <small>无需输入 https:// 或路径</small>
-            </label>
+          <div id="address-list" class="address-list" aria-live="polite">
+            <div class="loading-card">请先选择仓库</div>
           </div>
         </section>
 

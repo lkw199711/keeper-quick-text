@@ -382,6 +382,19 @@ h1 {
   font-weight: 800;
 }
 
+.module-repository-name {
+  display: block;
+  margin-bottom: 7px;
+  padding-right: 27px;
+  overflow: hidden;
+  color: var(--green);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .module-description {
   display: block;
   margin-top: 8px;
@@ -416,6 +429,24 @@ h1 {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 16px;
+}
+
+.address-list {
+  display: grid;
+  gap: 14px;
+}
+
+.address-card {
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--surface);
+  padding: 20px;
+}
+
+.address-card h3 {
+  margin: 0 0 16px;
+  color: var(--green);
+  font-size: 14px;
 }
 
 .field {

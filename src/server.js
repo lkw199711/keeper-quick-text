@@ -3,7 +3,7 @@ import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
 import { createServer } from 'node:http';
 import { extname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { REPOSITORY_CATALOG, findRepository } from '../public/route-catalog.js';
+import { REPOSITORY_CATALOG } from '../public/route-catalog.js';
 import {
   createHostsDocument,
   createOutputFilename,
@@ -38,13 +38,23 @@ export function createAppServer(options = {}) {
 
       if (request.method === 'POST' && url.pathname === '/api/hosts') {
         const payload = await readJsonBody(request);
-        const repository = findRepository(payload.repositoryId);
-        const moduleIds = Array.isArray(payload.moduleIds) ? payload.moduleIds : [];
+        const selections = Array.isArray(payload.selections)
+          ? payload.selections
+          : [{
+            repositoryId: payload.repositoryId,
+            moduleIds: payload.moduleIds,
+            ip: payload.ip,
+            domain: payload.domain
+          }];
         const ip = String(payload.ip || '').trim();
         const domain = String(payload.domain || '').trim().toLowerCase();
         const now = new Date();
-        const content = createHostsDocument({ repository, moduleIds, ip, domain, generatedAt: now });
-        const filename = createOutputFilename(repository.id, domain, now);
+        const content = createHostsDocument({ selections, ip, domain, generatedAt: now });
+        const filename = createOutputFilename(
+          selections.map((selection) => selection.repositoryId),
+          selections.map((selection) => selection.domain || domain),
+          now
+        );
 
         await mkdir(hostsDir, { recursive: true });
         await writeFile(join(hostsDir, filename), content, { encoding: 'utf8', flag: 'wx' });
@@ -103,9 +113,12 @@ async function loadHistory(hostsDir) {
     if (!entry.isFile() || !entry.name.endsWith('.hosts') || entry.name === '标准测试环境.hosts') continue;
     try {
       const document = parseHostsDocument(await readFile(join(hostsDir, entry.name), 'utf8'));
-      const repositoryId = document.metadata['仓库'];
+      const repositoryIds = String(document.metadata['仓库'] || '').split('、').filter(Boolean);
       for (const section of document.sections) {
-        history.push({ repositoryId, ip: section.ip, domain: section.domain });
+        const matchingRepositoryIds = section.repositoryId ? [section.repositoryId] : repositoryIds;
+        for (const repositoryId of matchingRepositoryIds) {
+          history.push({ repositoryId, ip: section.ip, domain: section.domain });
+        }
       }
     } catch {
       // 手工维护的 hosts 文件不应阻止页面启动。

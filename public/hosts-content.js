@@ -1,25 +1,44 @@
-export function createHostsContent({ repository, modules, ip, domain, generatedAt }) {
+export function createHostsContent({ repository, modules, selections, ip, domain, generatedAt }) {
+  const normalizedSelections = (selections || [{ repository, modules }]).map((selection) => ({
+    ...selection,
+    ip: selection.ip || ip,
+    domain: selection.domain || domain
+  }));
+  const repositories = normalizedSelections.map((selection) => selection.repository);
+  const selectedModules = normalizedSelections.flatMap((selection) => selection.modules);
+  const hasMultipleRepositories = repositories.length > 1;
   const timestamp = generatedAt
     ? formatDisplayTimestamp(generatedAt)
     : '确认后生成';
   const lines = [
     '# keeper-quick-text',
-    `# 仓库: ${repository.name}`,
-    `# 模块: ${modules.map((module) => module.name).join('、') || '尚未选择'}`,
+    `# 仓库: ${repositories.map((item) => item.name).join('、')}`,
+    `# 模块: ${formatModuleNames(normalizedSelections, hasMultipleRepositories) || '尚未选择'}`,
     `# 生成时间: ${timestamp}`,
-    '# 路由字典: public/route-catalog.js',
-    '',
-    `${ip}\t\t${domain}`
+    '# 路由字典: public/route-catalog.js'
   ];
 
-  for (const module of modules) {
-    for (const route of module.routes) {
-      lines.push(`#${route.name}`);
-      lines.push(`#${createRouteUrl(route.path, domain)}`);
+  for (const selection of normalizedSelections) {
+    lines.push('');
+    if (hasMultipleRepositories) lines.push(`# 仓库段: ${selection.repository.name}`);
+    lines.push(`${selection.ip}\t\t${selection.domain}`);
+    for (const module of selection.modules) {
+      for (const route of module.routes) {
+        lines.push(`#${route.name}`);
+        lines.push(`#${createRouteUrl(route.path, selection.domain)}`);
+      }
     }
   }
 
   return `${lines.join('\n')}\n`;
+}
+
+function formatModuleNames(selections, includeRepositoryName) {
+  return selections.flatMap(({ repository, modules }) => (
+    modules.map((module) => includeRepositoryName
+      ? `${repository.name} / ${module.name}`
+      : module.name)
+  )).join('、');
 }
 
 function createRouteUrl(path, domain) {
@@ -30,7 +49,7 @@ function createRouteUrl(path, domain) {
   }
 }
 
-export function createOutputFilename(repositoryId, domain, date = new Date()) {
+export function createOutputFilename(repositoryIds, domains, date = new Date()) {
   const timestamp = new Intl.DateTimeFormat('sv-SE', {
     timeZone: 'Asia/Shanghai',
     year: 'numeric',
@@ -42,7 +61,12 @@ export function createOutputFilename(repositoryId, domain, date = new Date()) {
     hour12: false
   }).format(date).replace(/[-: ]/gu, '');
 
-  return `${repositoryId}-${domain}-${timestamp}.hosts`;
+  const ids = Array.isArray(repositoryIds) ? repositoryIds : [repositoryIds];
+  const normalizedDomains = Array.isArray(domains) ? domains : [domains];
+  const namePrefix = ids.length === 1
+    ? `${ids[0]}-${normalizedDomains[0]}`
+    : 'multi-repository';
+  return `${namePrefix}-${timestamp}.hosts`;
 }
 
 function formatDisplayTimestamp(date) {

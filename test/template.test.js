@@ -78,6 +78,40 @@ test('只生成所选模块并替换 IP 和域名', () => {
   assert.equal(parseHostsDocument(content).sections[0].routes.length, 2);
 });
 
+test('跨仓库模块合并生成同一个 hosts 文件', () => {
+  const content = createHostsDocument({
+    selections: [
+      {
+        repositoryId: 'keeper-qua-audit',
+        moduleIds: ['pop-brand'],
+        ip: '10.9.8.7',
+        domain: 'qua-multi.example.com'
+      },
+      {
+        repositoryId: 'keeper-second-review',
+        moduleIds: ['lbs-video'],
+        ip: '10.9.8.8',
+        domain: 'review-multi.example.com'
+      }
+    ],
+    generatedAt: new Date('2026-09-21T06:30:00.000Z')
+  });
+
+  assert.match(content, /# 仓库: keeper-qua-audit、keeper-second-review/u);
+  assert.match(content, /keeper-qua-audit \/ POP 品牌/u);
+  assert.match(content, /keeper-second-review \/ LBS 视频/u);
+  assert.match(content, /10\.9\.8\.7\t\tqua-multi\.example\.com/u);
+  assert.match(content, /10\.9\.8\.8\t\treview-multi\.example\.com/u);
+  assert.match(content, /https:\/\/qua-multi\.example\.com\/keeper\/qua-audit\/brandAudit/u);
+  assert.match(content, /https:\/\/review-multi\.example\.com\/keeper\/takeout\/storeVideoAudit/u);
+  assert.doesNotMatch(content, /categoryAudit|storeQuaAudit/u);
+  const sections = parseHostsDocument(content).sections;
+  assert.equal(sections.length, 2);
+  assert.equal(sections[0].repositoryId, 'keeper-qua-audit');
+  assert.equal(sections[1].repositoryId, 'keeper-second-review');
+  assert.equal(sections[0].routes.length + sections[1].routes.length, 3);
+});
+
 test('拒绝空模块、跨仓库模块和不合法地址', () => {
   const repository = findRepository('keeper-qua-audit');
   const validInput = { repository, ip: '127.0.0.1', domain: 'example.com' };
@@ -108,5 +142,13 @@ test('输出文件名包含仓库、域名和北京时间', () => {
       new Date('2026-09-21T06:30:45.000Z')
     ),
     'keeper-qua-audit-qua-preview.example.com-20260921143045.hosts'
+  );
+  assert.equal(
+    createOutputFilename(
+      ['keeper-qua-audit', 'keeper-second-review'],
+      ['qua-multi.example.com', 'review-multi.example.com'],
+      new Date('2026-09-21T06:30:45.000Z')
+    ),
+    'multi-repository-20260921143045.hosts'
   );
 });

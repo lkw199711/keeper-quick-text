@@ -42,6 +42,34 @@ test('Web API 返回模板配置并在 hosts 目录生成文件', async (context
   assert.match(result.relativePath, /^hosts\/keeper-qua-audit-qua-preview\.example\.com-\d{14}\.hosts$/u);
   assert.equal(await readFile(join(temporaryRoot, result.relativePath), 'utf8'), result.content);
   assert.match(result.content, /#pop品牌审核\n#https:\/\/qua-preview\.example\.com\/keeper\/qua-audit\/brandAudit/u);
+
+  const multiResponse = await fetch(`${baseUrl}/api/hosts`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      selections: [
+        {
+          repositoryId: 'keeper-qua-audit',
+          moduleIds: ['pop-brand'],
+          ip: '10.2.3.5',
+          domain: 'qua-multi.example.com'
+        },
+        {
+          repositoryId: 'keeper-second-review',
+          moduleIds: ['lbs-video'],
+          ip: '10.2.3.6',
+          domain: 'review-multi.example.com'
+        }
+      ]
+    })
+  });
+  const multiResult = await multiResponse.json();
+
+  assert.equal(multiResponse.status, 201);
+  assert.match(multiResult.relativePath, /^hosts\/multi-repository-\d{14}\.hosts$/u);
+  assert.match(multiResult.content, /# 仓库: keeper-qua-audit、keeper-second-review/u);
+  assert.match(multiResult.content, /qua-multi\.example\.com\/keeper\/qua-audit\/brandAudit/u);
+  assert.match(multiResult.content, /review-multi\.example\.com\/keeper\/takeout\/storeVideoAudit/u);
 });
 
 test('Web API 拒绝未知仓库和非法地址', async (context) => {
