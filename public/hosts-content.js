@@ -1,4 +1,4 @@
-export function createHostsContent({ repository, modules, selections, ip, domain, generatedAt }) {
+export function createHostsContent({ repository, modules, selections, ip, domain, deploymentEnvironment, generatedAt }) {
   const normalizedSelections = (selections || [{ repository, modules }]).map((selection) => ({
     ...selection,
     ip: selection.ip || ip,
@@ -12,6 +12,7 @@ export function createHostsContent({ repository, modules, selections, ip, domain
     : '确认后生成';
   const lines = [
     '# keeper-quick-text',
+    `# 环境: ${deploymentEnvironment?.name || '测试环境'}`,
     `# 仓库: ${repositories.map((item) => item.name).join('、')}`,
     `# 模块: ${formatModuleNames(normalizedSelections, hasMultipleRepositories) || '尚未选择'}`,
     `# 生成时间: ${timestamp}`,

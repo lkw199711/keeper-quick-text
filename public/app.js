@@ -1,5 +1,12 @@
 import { createHostsContent, createOutputFilename } from './hosts-content.js';
-import { REPOSITORY_CATALOG, getRepositoryRouteCount } from './route-catalog.js';
+import {
+  DEFAULT_DEPLOYMENT_ENVIRONMENT_ID,
+  DEPLOYMENT_ENVIRONMENTS,
+  REPOSITORY_CATALOG,
+  findDeploymentEnvironment,
+  getRepositoryEnvironmentAddress,
+  getRepositoryRouteCount
+} from './route-catalog.js';
 import { APP_CONFIG, OUTPUT_MODES } from './runtime-config.js';
 
 const LOCAL_HISTORY_KEY = 'keeper-quick-text.history.v1';
@@ -31,6 +38,7 @@ const MODE_INFO = {
 const elements = {
   savedEnvironmentList: document.querySelector('#saved-environment-list'),
   savedEnvironmentCount: document.querySelector('#saved-environment-count'),
+  deploymentEnvironmentList: document.querySelector('#deployment-environment-list'),
   repositoryList: document.querySelector('#repository-list'),
   moduleList: document.querySelector('#module-list'),
   moduleSummary: document.querySelector('#module-summary'),
@@ -52,6 +60,7 @@ const elements = {
   dialog: document.querySelector('#confirm-dialog'),
   dialogNote: document.querySelector('#dialog-note'),
   confirmButton: document.querySelector('#confirm-button'),
+  confirmEnvironment: document.querySelector('#confirm-environment'),
   confirmRepository: document.querySelector('#confirm-repository'),
   confirmModules: document.querySelector('#confirm-modules'),
   confirmIp: document.querySelector('#confirm-ip'),
@@ -64,6 +73,7 @@ const elements = {
 
 const state = {
   config: undefined,
+  selectedEnvironmentId: DEFAULT_DEPLOYMENT_ENVIRONMENT_ID,
   selectedRepositoryIds: new Set(),
   selectedModuleKeys: new Set(),
   repositoryAddresses: new Map(),
@@ -76,6 +86,7 @@ init();
 async function init() {
   bindEvents();
   renderSavedEnvironments();
+  renderDeploymentEnvironments();
   renderRepositories();
 
   const modeInfo = MODE_INFO[APP_CONFIG.mode];
@@ -90,6 +101,37 @@ async function init() {
   } catch (error) {
     showMessage(error.message, 'error');
   }
+}
+
+function renderDeploymentEnvironments() {
+  elements.deploymentEnvironmentList.innerHTML = '';
+  for (const environment of DEPLOYMENT_ENVIRONMENTS) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'deployment-environment-card';
+    button.dataset.environmentId = environment.id;
+    button.setAttribute('aria-pressed', String(environment.id === state.selectedEnvironmentId));
+    button.innerHTML = `
+      <strong>${escapeHtml(environment.name)}</strong>
+      <span>${escapeHtml(environment.description)}</span>
+    `;
+    button.addEventListener('click', () => selectDeploymentEnvironment(environment.id));
+    elements.deploymentEnvironmentList.append(button);
+  }
+}
+
+function selectDeploymentEnvironment(environmentId, { keepEditing = false } = {}) {
+  if (!findDeploymentEnvironment(environmentId)) return;
+  if (!keepEditing) state.editingEnvironmentId = undefined;
+  state.selectedEnvironmentId = environmentId;
+  state.repositoryAddresses = new Map(getSelectedRepositories().map((repository) => [
+    repository.id,
+    { ...getDefaultAddress(repository) }
+  ]));
+  renderDeploymentEnvironments();
+  renderAddressFields();
+  renderSavedEnvironments();
+  updatePreview();
 }
 
 function bindEvents() {
@@ -164,10 +206,7 @@ function toggleRepository(repositoryId, { keepEditing = false } = {}) {
     for (const module of repository.modules) {
       state.selectedModuleKeys.add(createModuleKey(repositoryId, module.id));
     }
-    state.repositoryAddresses.set(repositoryId, {
-      ip: repository.defaultIp,
-      domain: repository.defaultDomain
-    });
+    state.repositoryAddresses.set(repositoryId, { ...getDefaultAddress(repository) });
   }
 
   syncRepositorySelectionUi();
@@ -196,10 +235,8 @@ function renderAddressFields() {
   }
 
   for (const repository of repositories) {
-    const address = state.repositoryAddresses.get(repository.id) || {
-      ip: repository.defaultIp,
-      domain: repository.defaultDomain
-    };
+    const defaultAddress = getDefaultAddress(repository);
+    const address = state.repositoryAddresses.get(repository.id) || { ...defaultAddress };
     state.repositoryAddresses.set(repository.id, address);
     const card = document.createElement('article');
     card.className = 'address-card';
@@ -222,10 +259,10 @@ function renderAddressFields() {
     `;
     const ipInput = card.querySelector('.repository-ip-input');
     const domainInput = card.querySelector('.repository-domain-input');
-    renderOptions(card.querySelector(`#ip-options-${repository.id}`), state.config?.ipOptions || [repository.defaultIp]);
+    renderOptions(card.querySelector(`#ip-options-${repository.id}`), state.config?.ipOptions || [defaultAddress.ip]);
     renderOptions(
       card.querySelector(`#domain-options-${repository.id}`),
-      state.config?.domainOptions?.[repository.id] || [repository.defaultDomain]
+      state.config?.domainOptions?.[repository.id] || [defaultAddress.domain]
     );
     ipInput.addEventListener('input', () => {
       address.ip = ipInput.value;
@@ -271,6 +308,7 @@ function renderSavedEnvironments() {
         ${environment.id === state.editingEnvironmentId ? '<span class="editing-badge">编辑中</span>' : ''}
       </div>
       <dl class="saved-environment-details">
+        <div><dt>环境</dt><dd>${escapeHtml(findDeploymentEnvironment(environment.deploymentEnvironmentId)?.name || '测试环境')}</dd></div>
         <div><dt>IP</dt><dd>${escapeHtml(formatEnvironmentIps(environment))}</dd></div>
         <div><dt>模块</dt><dd>${escapeHtml(modules.map((module) => module.name).join('、'))}</dd></div>
       </dl>
@@ -297,6 +335,7 @@ function editSavedEnvironment(environmentId) {
   if (!environment) return;
 
   state.editingEnvironmentId = environment.id;
+  state.selectedEnvironmentId = environment.deploymentEnvironmentId;
   state.selectedRepositoryIds = new Set(environment.repositoryIds);
   state.selectedModuleKeys = new Set(environment.selections.flatMap((selection) => (
     selection.moduleIds.map((moduleId) => createModuleKey(selection.repositoryId, moduleId))
@@ -305,6 +344,7 @@ function editSavedEnvironment(environmentId) {
     selection.repositoryId,
     { ip: selection.ip, domain: selection.domain }
   ]));
+  renderDeploymentEnvironments();
   syncRepositorySelectionUi();
   showMessage(`正在编辑 ${formatEnvironmentDomains(environment)}，重新生成后会更新该环境。`, 'success');
   document.querySelector('#repo-heading').scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -433,6 +473,7 @@ function updatePreview() {
   elements.previewSummary.textContent = `${repositories.length} 个仓库 · ${selections.length} 组地址`;
   elements.routeCount.textContent = `${modules.length} 个模块 · ${countRoutes(modules)} 条路由`;
   elements.previewContent.textContent = createHostsContent({
+    deploymentEnvironment: getSelectedDeploymentEnvironment(),
     selections: selections.map((selection) => ({
       ...selection,
       ip: selection.ip || '<IP>',
@@ -495,6 +536,7 @@ function openConfirmation() {
 
   const modules = getSelectedModules();
   const selections = getSelectedSelections();
+  elements.confirmEnvironment.textContent = getSelectedDeploymentEnvironment().name;
   elements.confirmRepository.textContent = getSelectedRepositories().map((repository) => repository.name).join('、');
   elements.confirmModules.textContent = modules.map((module) => module.name).join('、');
   elements.confirmIp.textContent = selections.map((selection) => `${selection.repository.name}: ${selection.ip}`).join('；');
@@ -510,6 +552,7 @@ function saveEnvironmentOnly() {
   const environmentLabel = getSelectedSelections().map((selection) => selection.domain).join('、');
   const wasEditing = Boolean(state.editingEnvironmentId);
   const savedEnvironment = saveLocalEnvironment({
+    deploymentEnvironmentId: state.selectedEnvironmentId,
     repositoryIds: [...state.selectedRepositoryIds],
     selections: serializeSelectedSelections()
   });
@@ -541,6 +584,7 @@ async function generateFile() {
           now
         ),
         content: createHostsContent({
+          deploymentEnvironment: getSelectedDeploymentEnvironment(),
           selections,
           generatedAt: now
         })
@@ -558,6 +602,7 @@ async function generateFile() {
       }
     }
     saveLocalEnvironment({
+      deploymentEnvironmentId: state.selectedEnvironmentId,
       repositoryIds: [...state.selectedRepositoryIds],
       selections: serializeSelectedSelections()
     });
@@ -580,6 +625,7 @@ async function generateOnServer() {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
+      deploymentEnvironmentId: state.selectedEnvironmentId,
       selections: serializeSelectedSelections()
     })
   });
@@ -595,9 +641,14 @@ async function refreshConfig() {
 
 function buildLocalConfig() {
   const history = readLocalHistory();
-  const ipOptions = new Set(REPOSITORY_CATALOG.map((item) => item.defaultIp));
+  const ipOptions = new Set(REPOSITORY_CATALOG.flatMap((item) => (
+    Object.values(item.environments).map((address) => address.ip)
+  )));
   const domainOptions = Object.fromEntries(
-    REPOSITORY_CATALOG.map((item) => [item.id, new Set([item.defaultDomain])])
+    REPOSITORY_CATALOG.map((item) => [
+      item.id,
+      new Set(Object.values(item.environments).map((address) => address.domain))
+    ])
   );
 
   for (const item of history) {
@@ -700,7 +751,10 @@ function normalizeSavedEnvironment(environment) {
   if (selections.every((selection) => selection.moduleIds.length === 0)) return undefined;
   if (selections.some((selection) => !isIp(selection.ip) || !isHostname(selection.domain))) return undefined;
 
-  return { ...environment, repositoryIds, selections };
+  const deploymentEnvironmentId = findDeploymentEnvironment(environment.deploymentEnvironmentId)
+    ? environment.deploymentEnvironmentId
+    : DEFAULT_DEPLOYMENT_ENVIRONMENT_ID;
+  return { ...environment, deploymentEnvironmentId, repositoryIds, selections };
 }
 
 function saveLocalEnvironment(environment) {
@@ -709,6 +763,8 @@ function saveLocalEnvironment(environment) {
     const existing = state.editingEnvironmentId
       ? environments.find((item) => item.id === state.editingEnvironmentId)
       : environments.find((item) => (
+        item.deploymentEnvironmentId === environment.deploymentEnvironmentId
+        &&
         repositorySetKey(item.repositoryIds) === repositorySetKey(environment.repositoryIds)
         && environmentAddressKey(item) === environmentAddressKey(environment)
       ));
@@ -779,6 +835,17 @@ function apiUrl(path) {
 
 function getSelectedRepositories() {
   return REPOSITORY_CATALOG.filter((repository) => state.selectedRepositoryIds.has(repository.id));
+}
+
+function getSelectedDeploymentEnvironment() {
+  return findDeploymentEnvironment(state.selectedEnvironmentId)
+    || findDeploymentEnvironment(DEFAULT_DEPLOYMENT_ENVIRONMENT_ID);
+}
+
+function getDefaultAddress(repository) {
+  return getRepositoryEnvironmentAddress(repository, state.selectedEnvironmentId)
+    || getRepositoryEnvironmentAddress(repository, DEFAULT_DEPLOYMENT_ENVIRONMENT_ID)
+    || { ip: '', domain: '' };
 }
 
 function getSelectedSelections() {

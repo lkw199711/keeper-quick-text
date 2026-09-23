@@ -43,9 +43,20 @@
           </div>
         </section>
 
-        <section class="step-section" aria-labelledby="repo-heading">
+        <section class="step-section" aria-labelledby="environment-heading">
           <div class="step-heading">
             <span class="step-number">01</span>
+            <div>
+              <h2 id="environment-heading">选择部署环境</h2>
+              <p>默认使用测试环境；切换后会带入各仓库在字典中配置的 IP 和域名。</p>
+            </div>
+          </div>
+          <div id="deployment-environment-list" class="deployment-environment-grid" aria-live="polite"></div>
+        </section>
+
+        <section class="step-section" aria-labelledby="repo-heading">
+          <div class="step-heading">
+            <span class="step-number">02</span>
             <div>
               <h2 id="repo-heading">选择仓库</h2>
               <p>可多选本次快速部署涉及的项目仓库。</p>
@@ -58,7 +69,7 @@
 
         <section class="step-section" aria-labelledby="module-heading">
           <div class="step-heading">
-            <span class="step-number">02</span>
+            <span class="step-number">03</span>
             <div>
               <h2 id="module-heading">选择业务模块</h2>
               <p>模块会合并展示所有已选仓库；只生成本次勾选模块的路由。</p>
@@ -76,10 +87,10 @@
 
         <section class="step-section" aria-labelledby="address-heading">
           <div class="step-heading">
-            <span class="step-number">03</span>
+            <span class="step-number">04</span>
             <div>
               <h2 id="address-heading">设置部署地址</h2>
-              <p>为每个已选仓库分别设置 IP 和访问域名。</p>
+              <p>默认值跟随部署环境和仓库，也可以在生成前手工调整。</p>
             </div>
           </div>
           <div id="address-list" class="address-list" aria-live="polite">
@@ -89,7 +100,7 @@
 
         <section class="step-section preview-section" aria-labelledby="preview-heading">
           <div class="step-heading">
-            <span class="step-number">04</span>
+            <span class="step-number">05</span>
             <div>
               <h2 id="preview-heading">确认并生成</h2>
               <p id="output-description">核对替换结果后生成 hosts 文件。</p>
@@ -133,6 +144,7 @@
         <p class="eyebrow">FINAL CHECK</p>
         <h2>确认生成 hosts 文件？</h2>
         <dl class="confirm-list">
+          <div><dt>部署环境</dt><dd id="confirm-environment">—</dd></div>
           <div><dt>仓库</dt><dd id="confirm-repository">—</dd></div>
           <div><dt>模块</dt><dd id="confirm-modules">—</dd></div>
           <div><dt>IP</dt><dd id="confirm-ip">—</dd></div>

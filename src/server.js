@@ -49,7 +49,13 @@ export function createAppServer(options = {}) {
         const ip = String(payload.ip || '').trim();
         const domain = String(payload.domain || '').trim().toLowerCase();
         const now = new Date();
-        const content = createHostsDocument({ selections, ip, domain, generatedAt: now });
+        const content = createHostsDocument({
+          selections,
+          ip,
+          domain,
+          deploymentEnvironmentId: payload.deploymentEnvironmentId,
+          generatedAt: now
+        });
         const filename = createOutputFilename(
           selections.map((selection) => selection.repositoryId),
           selections.map((selection) => selection.domain || domain),
@@ -81,9 +87,14 @@ export function createAppServer(options = {}) {
 
 async function loadConfig(hostsDir) {
   const history = await loadHistory(hostsDir);
-  const ipOptions = new Set(REPOSITORY_CATALOG.map((item) => item.defaultIp));
+  const ipOptions = new Set(REPOSITORY_CATALOG.flatMap((item) => (
+    Object.values(item.environments).map((address) => address.ip)
+  )));
   const domainOptions = Object.fromEntries(
-    REPOSITORY_CATALOG.map((item) => [item.id, new Set([item.defaultDomain])])
+    REPOSITORY_CATALOG.map((item) => [
+      item.id,
+      new Set(Object.values(item.environments).map((address) => address.domain))
+    ])
   );
 
   for (const item of history) {

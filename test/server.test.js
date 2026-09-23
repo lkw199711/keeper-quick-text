@@ -24,12 +24,16 @@ test('Web API 返回模板配置并在 hosts 目录生成文件', async (context
 
   assert.equal(configResponse.status, 200);
   assert.ok(config.ipOptions.includes('6.120.39.72'));
+  assert.ok(config.ipOptions.includes('11.125.76.107'));
   assert.ok(config.domainOptions['keeper-qua-audit'].includes('qua-audit.jdtest.net'));
+  assert.ok(config.domainOptions['keeper-qua-audit'].includes('qua-audit-seller-v10.shop.jd.com'));
+  assert.ok(config.domainOptions['keeper-qua-audit'].includes('man-keeper.jd.com'));
 
   const createResponse = await fetch(`${baseUrl}/api/hosts`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
+      deploymentEnvironmentId: 'production',
       repositoryId: 'keeper-qua-audit',
       moduleIds: ['pop-brand'],
       ip: '10.2.3.4',
@@ -41,6 +45,7 @@ test('Web API 返回模板配置并在 hosts 目录生成文件', async (context
   assert.equal(createResponse.status, 201);
   assert.match(result.relativePath, /^hosts\/keeper-qua-audit-qua-preview\.example\.com-\d{14}\.hosts$/u);
   assert.equal(await readFile(join(temporaryRoot, result.relativePath), 'utf8'), result.content);
+  assert.match(result.content, /# 环境: 线上环境/u);
   assert.match(result.content, /#pop品牌审核\n#https:\/\/qua-preview\.example\.com\/keeper\/qua-audit\/brandAudit/u);
 
   const multiResponse = await fetch(`${baseUrl}/api/hosts`, {

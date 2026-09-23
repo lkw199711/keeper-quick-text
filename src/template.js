@@ -1,6 +1,10 @@
 import { isIP } from 'node:net';
 import { createHostsContent } from '../public/hosts-content.js';
-import { REPOSITORY_CATALOG } from '../public/route-catalog.js';
+import {
+  DEFAULT_DEPLOYMENT_ENVIRONMENT_ID,
+  REPOSITORY_CATALOG,
+  findDeploymentEnvironment
+} from '../public/route-catalog.js';
 
 export { createOutputFilename } from '../public/hosts-content.js';
 
@@ -49,9 +53,25 @@ export function parseHostsDocument(content) {
   return { metadata, sections };
 }
 
-export function createHostsDocument({ repository, moduleIds, selections, ip, domain, generatedAt = new Date() }) {
+export function createHostsDocument({
+  repository,
+  moduleIds,
+  selections,
+  ip,
+  domain,
+  deploymentEnvironmentId = DEFAULT_DEPLOYMENT_ENVIRONMENT_ID,
+  generatedAt = new Date()
+}) {
+  const deploymentEnvironment = findDeploymentEnvironment(deploymentEnvironmentId);
+  if (!deploymentEnvironment) throw new Error('请选择有效的部署环境。');
   const validatedSelections = validateGenerationInput({ repository, moduleIds, selections, ip, domain });
-  return createHostsContent({ selections: validatedSelections, ip, domain, generatedAt });
+  return createHostsContent({
+    deploymentEnvironment,
+    selections: validatedSelections,
+    ip,
+    domain,
+    generatedAt
+  });
 }
 
 export function validateGenerationInput({ repository, moduleIds, selections, ip, domain }) {

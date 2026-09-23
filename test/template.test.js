@@ -3,8 +3,11 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import {
+  DEFAULT_DEPLOYMENT_ENVIRONMENT_ID,
+  DEPLOYMENT_ENVIRONMENTS,
   REPOSITORY_CATALOG,
   findRepository,
+  getRepositoryEnvironmentAddress,
   getRepositoryRouteCount
 } from '../public/route-catalog.js';
 import {
@@ -16,6 +19,12 @@ import {
 const templateFile = fileURLToPath(new URL('../hosts/标准测试环境.hosts', import.meta.url));
 
 test('前端字典定义三个仓库、十一个模块和二十一条路由', () => {
+  assert.equal(DEFAULT_DEPLOYMENT_ENVIRONMENT_ID, 'test');
+  assert.deepEqual(DEPLOYMENT_ENVIRONMENTS.map((environment) => environment.id), [
+    'test',
+    'staging',
+    'production'
+  ]);
   assert.deepEqual(
     REPOSITORY_CATALOG.map((repository) => ({
       id: repository.id,
@@ -30,6 +39,13 @@ test('前端字典定义三个仓库、十一个模块和二十一条路由', ()
   );
 
   for (const repository of REPOSITORY_CATALOG) {
+    assert.deepEqual(Object.keys(repository.environments), ['test', 'staging', 'production']);
+    assert.deepEqual(repository.environments.production, {
+      ip: '11.125.76.107',
+      domain: 'man-keeper.jd.com'
+    });
+    assert.equal(repository.environments.staging.ip, '6.120.39.72');
+    assert.match(repository.environments.staging.domain, /-seller-v10\.shop\.jd\.com$/u);
     assert.equal(new Set(repository.modules.map((module) => module.id)).size, repository.modules.length);
     for (const module of repository.modules) {
       assert.ok(module.routes.length >= 1);
@@ -43,15 +59,16 @@ test('前端字典与标准测试环境中的 IP、域名和路由保持一致',
   const { sections } = parseHostsDocument(await readFile(templateFile, 'utf8'));
 
   for (const repository of REPOSITORY_CATALOG) {
-    const section = sections.find((item) => item.domain === repository.defaultDomain);
+    const address = getRepositoryEnvironmentAddress(repository, 'test');
+    const section = sections.find((item) => item.domain === address.domain);
     assert.ok(section, `标准测试环境缺少 ${repository.name}`);
-    assert.equal(section.ip, repository.defaultIp);
+    assert.equal(section.ip, address.ip);
 
     const catalogRoutes = repository.modules.flatMap((module) => module.routes);
     assert.deepEqual(
       catalogRoutes.map((route) => ({
         label: route.name.toLowerCase(),
-        url: new URL(route.path, `https://${repository.defaultDomain}`).toString()
+        url: new URL(route.path, `https://${address.domain}`).toString()
       })),
       section.routes.map((route) => ({
         label: route.label.toLowerCase(),
@@ -72,10 +89,34 @@ test('只生成所选模块并替换 IP 和域名', () => {
   });
 
   assert.match(content, /# 模块: POP 品牌/u);
+  assert.match(content, /# 环境: 测试环境/u);
   assert.match(content, /10\.1\.2\.3\t\tqua-preview\.example\.com/u);
   assert.match(content, /https:\/\/qua-preview\.example\.com\/keeper\/qua-audit\/brandAudit/u);
   assert.doesNotMatch(content, /categoryAudit/u);
   assert.equal(parseHostsDocument(content).sections[0].routes.length, 2);
+});
+
+test('生成内容记录部署环境并拒绝未知环境', () => {
+  const repository = findRepository('keeper-qua-audit');
+  const content = createHostsDocument({
+    repository,
+    moduleIds: ['pop-brand'],
+    ip: '11.125.76.107',
+    domain: 'man-keeper.jd.com',
+    deploymentEnvironmentId: 'production'
+  });
+
+  assert.match(content, /# 环境: 线上环境/u);
+  assert.throws(
+    () => createHostsDocument({
+      repository,
+      moduleIds: ['pop-brand'],
+      ip: '127.0.0.1',
+      domain: 'example.com',
+      deploymentEnvironmentId: 'unknown'
+    }),
+    /有效的部署环境/u
+  );
 });
 
 test('跨仓库模块合并生成同一个 hosts 文件', () => {

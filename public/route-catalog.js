@@ -1,15 +1,27 @@
 // 路由维护入口：仓库 → 业务模块 → 页面路由。
-// Repository: id, name, description, defaultIp, defaultDomain, modules
+// Repository: id, name, description, environments, modules
+// environments: 按部署环境维护该仓库的默认 IP 与域名。
 // Module:     id, name, description, routes
 // Route:      id, name, type('audit' | 'query'), path
 // path 仅包含域名后的路径和查询参数，生成时会与用户填写的域名组合。
+export const DEPLOYMENT_ENVIRONMENTS = [
+  { id: 'test', name: '测试环境', shortName: '测试', description: '日常联调与功能验证', isDefault: true },
+  { id: 'staging', name: '预发环境', shortName: '预发', description: '上线前的预发布验证' },
+  { id: 'production', name: '线上环境', shortName: '线上', description: '正式生产环境' }
+];
+
+export const DEFAULT_DEPLOYMENT_ENVIRONMENT_ID = 'test';
+
 export const REPOSITORY_CATALOG = [
   {
     id: 'keeper-sell-supplier',
     name: 'keeper-sell-supplier',
     description: '自营 / POP 入驻、资质与单品审核',
-    defaultIp: '6.120.39.72',
-    defaultDomain: 'sell-supplier.jdtest.net',
+    environments: {
+      test: { ip: '6.120.39.72', domain: 'sell-supplier.jdtest.net' },
+      staging: { ip: '6.120.39.72', domain: 'seller-v10.shop.jd.com' },
+      production: { ip: '11.125.76.107', domain: 'man-keeper.jd.com' }
+    },
     modules: [
       {
         id: 'self-operated-onboarding',
@@ -62,8 +74,11 @@ export const REPOSITORY_CATALOG = [
     id: 'keeper-qua-audit',
     name: 'keeper-qua-audit',
     description: 'POP 品牌与类目审核',
-    defaultIp: '6.120.39.72',
-    defaultDomain: 'qua-audit.jdtest.net',
+    environments: {
+      test: { ip: '6.120.39.72', domain: 'qua-audit.jdtest.net' },
+      staging: { ip: '6.120.39.72', domain: 'seller-v10.shop.jd.com' },
+      production: { ip: '11.125.76.107', domain: 'man-keeper.jd.com' }
+    },
     modules: [
       {
         id: 'pop-brand',
@@ -89,8 +104,11 @@ export const REPOSITORY_CATALOG = [
     id: 'keeper-second-review',
     name: 'keeper-second-review',
     description: '门店、商家、视频与装修审核',
-    defaultIp: '6.120.39.72',
-    defaultDomain: 'second-review.jdtest.net',
+    environments: {
+      test: { ip: '6.120.39.72', domain: 'second-review.jdtest.net' },
+      staging: { ip: '6.120.39.72', domain: 'seller-v10.shop.jd.com' },
+      production: { ip: '11.125.76.107', domain: 'man-keeper.jd.com' }
+    },
     modules: [
       {
         id: 'store-qualification',
@@ -133,6 +151,14 @@ export const REPOSITORY_CATALOG = [
 
 export function findRepository(repositoryId) {
   return REPOSITORY_CATALOG.find((repository) => repository.id === repositoryId);
+}
+
+export function findDeploymentEnvironment(environmentId) {
+  return DEPLOYMENT_ENVIRONMENTS.find((environment) => environment.id === environmentId);
+}
+
+export function getRepositoryEnvironmentAddress(repository, environmentId = DEFAULT_DEPLOYMENT_ENVIRONMENT_ID) {
+  return repository?.environments?.[environmentId];
 }
 
 export function getRepositoryRouteCount(repository) {
