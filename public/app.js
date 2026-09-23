@@ -3,6 +3,7 @@ import { REPOSITORY_CATALOG, getRepositoryRouteCount } from './route-catalog.js'
 import { APP_CONFIG, OUTPUT_MODES } from './runtime-config.js';
 
 const LOCAL_HISTORY_KEY = 'keeper-quick-text.history.v1';
+const SAVED_ENVIRONMENTS_KEY = 'keeper-quick-text.environments.v1';
 const MODE_INFO = {
   [OUTPUT_MODES.DOWNLOAD]: {
     label: '浏览器下载模式',
@@ -28,6 +29,8 @@ const MODE_INFO = {
 };
 
 const elements = {
+  savedEnvironmentList: document.querySelector('#saved-environment-list'),
+  savedEnvironmentCount: document.querySelector('#saved-environment-count'),
   repositoryList: document.querySelector('#repository-list'),
   moduleList: document.querySelector('#module-list'),
   moduleSummary: document.querySelector('#module-summary'),
@@ -42,6 +45,7 @@ const elements = {
   routeCount: document.querySelector('#route-count'),
   copyPreviewButton: document.querySelector('#copy-preview-button'),
   copyPreviewLabel: document.querySelector('#copy-preview-label'),
+  saveOnlyButton: document.querySelector('#save-only-button'),
   generateButton: document.querySelector('#generate-button'),
   generateActionLabel: document.querySelector('#generate-action-label'),
   outputDescription: document.querySelector('#output-description'),
@@ -55,19 +59,25 @@ const elements = {
   confirmModules: document.querySelector('#confirm-modules'),
   confirmIp: document.querySelector('#confirm-ip'),
   confirmDomain: document.querySelector('#confirm-domain'),
-  confirmRoutes: document.querySelector('#confirm-routes')
+  confirmRoutes: document.querySelector('#confirm-routes'),
+  deleteEnvironmentDialog: document.querySelector('#delete-environment-dialog'),
+  deleteEnvironmentDomain: document.querySelector('#delete-environment-domain'),
+  confirmDeleteEnvironmentButton: document.querySelector('#confirm-delete-environment-button')
 };
 
 const state = {
   config: undefined,
   repository: undefined,
-  selectedModuleIds: new Set()
+  selectedModuleIds: new Set(),
+  editingEnvironmentId: undefined,
+  pendingDeleteEnvironmentId: undefined
 };
 
 init();
 
 async function init() {
   bindEvents();
+  renderSavedEnvironments();
   renderRepositories();
 
   const modeInfo = MODE_INFO[APP_CONFIG.mode];
@@ -91,10 +101,15 @@ function bindEvents() {
   elements.selectAllButton.addEventListener('click', selectAllModules);
   elements.clearAllButton.addEventListener('click', clearAllModules);
   elements.copyPreviewButton.addEventListener('click', copyPreviewContent);
+  elements.saveOnlyButton.addEventListener('click', saveEnvironmentOnly);
   elements.generateButton.addEventListener('click', openConfirmation);
   elements.confirmButton.addEventListener('click', (event) => {
     event.preventDefault();
     generateFile();
+  });
+  elements.confirmDeleteEnvironmentButton.addEventListener('click', deleteSavedEnvironment);
+  elements.deleteEnvironmentDialog.addEventListener('close', () => {
+    state.pendingDeleteEnvironmentId = undefined;
   });
 }
 
@@ -139,7 +154,8 @@ function renderRepositories() {
   }
 }
 
-function selectRepository(repositoryId) {
+function selectRepository(repositoryId, { keepEditing = false } = {}) {
+  if (!keepEditing) state.editingEnvironmentId = undefined;
   state.repository = REPOSITORY_CATALOG.find((item) => item.id === repositoryId);
   state.selectedModuleIds = new Set(state.repository.modules.map((module) => module.id));
 
@@ -158,8 +174,110 @@ function selectRepository(repositoryId) {
     elements.domainOptions,
     state.config?.domainOptions?.[repositoryId] || [state.repository.defaultDomain]
   );
+  renderSavedEnvironments();
   showMessage('');
   updatePreview();
+}
+
+function renderSavedEnvironments() {
+  const environments = readSavedEnvironments();
+  elements.savedEnvironmentCount.textContent = `${environments.length} 个环境`;
+
+  if (environments.length === 0) {
+    elements.savedEnvironmentList.innerHTML = '<div class="saved-environment-empty">还没有已保存环境，完成一次生成后会显示在这里。</div>';
+    return;
+  }
+
+  elements.savedEnvironmentList.innerHTML = '';
+  for (const environment of environments) {
+    const repository = REPOSITORY_CATALOG.find((item) => item.id === environment.repositoryId);
+    if (!repository) continue;
+    const modules = repository.modules.filter((module) => environment.moduleIds.includes(module.id));
+    const card = document.createElement('article');
+    card.className = 'saved-environment-card';
+    if (environment.id === state.editingEnvironmentId) card.dataset.editing = 'true';
+    card.innerHTML = `
+      <div class="saved-environment-card-heading">
+        <div>
+          <strong>${escapeHtml(environment.domain)}</strong>
+          <span>${escapeHtml(repository.name)}</span>
+        </div>
+        ${environment.id === state.editingEnvironmentId ? '<span class="editing-badge">编辑中</span>' : ''}
+      </div>
+      <dl class="saved-environment-details">
+        <div><dt>IP</dt><dd>${escapeHtml(environment.ip)}</dd></div>
+        <div><dt>模块</dt><dd>${escapeHtml(modules.map((module) => module.name).join('、'))}</dd></div>
+      </dl>
+      <div class="saved-environment-footer">
+        <time datetime="${escapeHtml(environment.updatedAt)}">${escapeHtml(formatSavedTime(environment.updatedAt))}</time>
+        <div class="saved-environment-actions">
+          <button class="edit-environment-button" type="button" aria-label="编辑 ${escapeHtml(environment.domain)}">编辑</button>
+          <button class="delete-environment-button" type="button" aria-label="删除 ${escapeHtml(environment.domain)}">删除</button>
+        </div>
+      </div>
+    `;
+    card.querySelector('.edit-environment-button').addEventListener('click', () => {
+      editSavedEnvironment(environment.id);
+    });
+    card.querySelector('.delete-environment-button').addEventListener('click', () => {
+      openDeleteEnvironmentConfirmation(environment.id);
+    });
+    elements.savedEnvironmentList.append(card);
+  }
+}
+
+function editSavedEnvironment(environmentId) {
+  const environment = readSavedEnvironments().find((item) => item.id === environmentId);
+  if (!environment) return;
+
+  state.editingEnvironmentId = environment.id;
+  selectRepository(environment.repositoryId, { keepEditing: true });
+  const availableModuleIds = new Set(state.repository.modules.map((module) => module.id));
+  state.selectedModuleIds = new Set(
+    environment.moduleIds.filter((moduleId) => availableModuleIds.has(moduleId))
+  );
+  elements.ipInput.value = environment.ip;
+  elements.domainInput.value = environment.domain;
+  renderModules();
+  renderSavedEnvironments();
+  updatePreview();
+  showMessage(`正在编辑 ${environment.domain}，重新生成后会更新该环境。`, 'success');
+  document.querySelector('#repo-heading').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function openDeleteEnvironmentConfirmation(environmentId) {
+  const environment = readSavedEnvironments().find((item) => item.id === environmentId);
+  if (!environment) return;
+
+  state.pendingDeleteEnvironmentId = environment.id;
+  elements.deleteEnvironmentDomain.textContent = environment.domain;
+  elements.deleteEnvironmentDialog.showModal();
+}
+
+function deleteSavedEnvironment() {
+  const environmentId = state.pendingDeleteEnvironmentId;
+  const environments = readSavedEnvironments();
+  const environment = environments.find((item) => item.id === environmentId);
+  if (!environment) {
+    elements.deleteEnvironmentDialog.close();
+    return;
+  }
+
+  try {
+    localStorage.setItem(
+      SAVED_ENVIRONMENTS_KEY,
+      JSON.stringify(environments.filter((item) => item.id !== environmentId))
+    );
+  } catch {
+    elements.deleteEnvironmentDialog.close();
+    showMessage('环境删除失败，请检查浏览器是否允许本地存储。', 'error');
+    return;
+  }
+
+  if (state.editingEnvironmentId === environmentId) state.editingEnvironmentId = undefined;
+  elements.deleteEnvironmentDialog.close();
+  renderSavedEnvironments();
+  showMessage(`已删除环境 ${environment.domain}。`, 'success');
 }
 
 function renderModules() {
@@ -222,6 +340,7 @@ function updatePreview() {
   const selectionValid = modules.length > 0;
 
   elements.generateButton.disabled = !inputValid || !selectionValid;
+  elements.saveOnlyButton.disabled = !inputValid || !selectionValid;
   elements.copyPreviewButton.disabled = false;
   elements.previewSummary.textContent = `${state.repository.name} → ${domain || '等待输入域名'}`;
   elements.routeCount.textContent = `${modules.length} 个模块 · ${countRoutes(modules)} 条路由`;
@@ -294,6 +413,26 @@ function openConfirmation() {
   elements.dialog.showModal();
 }
 
+function saveEnvironmentOnly() {
+  updatePreview();
+  if (elements.saveOnlyButton.disabled) return;
+
+  const domain = elements.domainInput.value.trim().toLowerCase();
+  const wasEditing = Boolean(state.editingEnvironmentId);
+  const savedEnvironment = saveLocalEnvironment({
+    repositoryId: state.repository.id,
+    moduleIds: [...state.selectedModuleIds],
+    ip: elements.ipInput.value.trim(),
+    domain
+  });
+
+  if (!savedEnvironment) {
+    showMessage('环境保存失败，请检查浏览器是否允许本地存储。', 'error');
+    return;
+  }
+  showMessage(`${wasEditing ? '已更新' : '已保存'}环境 ${domain}，未生成或下载文件。`, 'success');
+}
+
 async function generateFile() {
   const modeInfo = MODE_INFO[APP_CONFIG.mode];
   const modules = getSelectedModules();
@@ -323,6 +462,12 @@ async function generateFile() {
     if (downloadsFile()) downloadFile(result.filename, result.content);
     if (APP_CONFIG.mode !== OUTPUT_MODES.SERVER) saveLocalHistory({
       repositoryId: state.repository.id,
+      ip,
+      domain
+    });
+    saveLocalEnvironment({
+      repositoryId: state.repository.id,
+      moduleIds: [...state.selectedModuleIds],
       ip,
       domain
     });
@@ -421,6 +566,71 @@ function saveLocalHistory(item) {
   } catch {
     // 禁用或写满 localStorage 不影响文件下载。
   }
+}
+
+function readSavedEnvironments() {
+  try {
+    const value = JSON.parse(localStorage.getItem(SAVED_ENVIRONMENTS_KEY) || '[]');
+    if (!Array.isArray(value)) return [];
+    return value.filter((environment) => {
+      const repository = REPOSITORY_CATALOG.find((item) => item.id === environment?.repositoryId);
+      if (!repository || !Array.isArray(environment.moduleIds)) return false;
+      const availableModuleIds = new Set(repository.modules.map((module) => module.id));
+      return typeof environment.id === 'string'
+        && typeof environment.ip === 'string'
+        && typeof environment.domain === 'string'
+        && typeof environment.updatedAt === 'string'
+        && isIp(environment.ip)
+        && isHostname(environment.domain)
+        && environment.moduleIds.some((moduleId) => availableModuleIds.has(moduleId));
+    });
+  } catch {
+    return [];
+  }
+}
+
+function saveLocalEnvironment(environment) {
+  try {
+    const environments = readSavedEnvironments();
+    const existing = state.editingEnvironmentId
+      ? environments.find((item) => item.id === state.editingEnvironmentId)
+      : environments.find((item) => (
+        item.repositoryId === environment.repositoryId && item.domain === environment.domain
+      ));
+    const savedEnvironment = {
+      ...environment,
+      id: existing?.id || createEnvironmentId(),
+      updatedAt: new Date().toISOString()
+    };
+    const nextEnvironments = [
+      savedEnvironment,
+      ...environments.filter((item) => item.id !== savedEnvironment.id)
+    ].slice(0, APP_CONFIG.historyLimit);
+    localStorage.setItem(SAVED_ENVIRONMENTS_KEY, JSON.stringify(nextEnvironments));
+    renderSavedEnvironments();
+    return savedEnvironment;
+  } catch {
+    // 禁用或写满 localStorage 不影响文件生成。
+    return undefined;
+  }
+}
+
+function createEnvironmentId() {
+  return globalThis.crypto?.randomUUID?.()
+    || `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function formatSavedTime(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '刚刚更新';
+  return new Intl.DateTimeFormat('zh-CN', {
+    timeZone: 'Asia/Shanghai',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  }).format(date).replaceAll('/', '-');
 }
 
 function downloadFile(filename, content) {

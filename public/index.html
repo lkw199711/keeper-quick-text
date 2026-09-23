@@ -29,6 +29,20 @@
       </header>
 
       <main>
+        <section class="saved-environments-section" aria-labelledby="saved-environments-heading">
+          <div class="saved-environments-heading">
+            <div>
+              <p class="eyebrow">SAVED ENVIRONMENTS</p>
+              <h2 id="saved-environments-heading">已保存环境</h2>
+              <p>生成成功后自动保存到当前浏览器，之后可以载入并继续编辑。</p>
+            </div>
+            <span id="saved-environment-count" class="saved-environment-count">0 个环境</span>
+          </div>
+          <div id="saved-environment-list" class="saved-environment-list" aria-live="polite">
+            <div class="saved-environment-empty">还没有已保存环境，完成一次生成后会显示在这里。</div>
+          </div>
+        </section>
+
         <section class="step-section" aria-labelledby="repo-heading">
           <div class="step-heading">
             <span class="step-number">01</span>
@@ -112,10 +126,13 @@
           </div>
           <div class="action-row">
             <p id="message" class="message" role="status" aria-live="polite"></p>
-            <button id="generate-button" class="primary-button" type="button" disabled>
-              <span id="generate-action-label">确认生成文件</span>
-              <span aria-hidden="true">→</span>
-            </button>
+            <div class="action-buttons">
+              <button id="save-only-button" class="secondary-button" type="button" disabled>仅保存环境</button>
+              <button id="generate-button" class="primary-button" type="button" disabled>
+                <span id="generate-action-label">确认生成文件</span>
+                <span aria-hidden="true">→</span>
+              </button>
+            </div>
           </div>
         </section>
       </main>
@@ -137,6 +154,22 @@
         <div class="dialog-actions">
           <button class="secondary-button" value="cancel">返回修改</button>
           <button id="confirm-button" class="primary-button" value="default">生成文件</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="delete-environment-dialog" class="confirm-dialog delete-environment-dialog">
+      <form method="dialog">
+        <button class="dialog-close" value="cancel" aria-label="关闭">×</button>
+        <p class="eyebrow">SAVED ENVIRONMENT</p>
+        <h2>删除已保存环境？</h2>
+        <p class="delete-environment-copy">
+          将从当前浏览器中删除 <strong id="delete-environment-domain">—</strong>。
+        </p>
+        <p class="dialog-note">已下载或服务器中已经生成的 hosts 文件不会受到影响。</p>
+        <div class="dialog-actions">
+          <button class="secondary-button" value="cancel">取消</button>
+          <button id="confirm-delete-environment-button" class="danger-button" type="button">确认删除</button>
         </div>
       </form>
     </dialog>
