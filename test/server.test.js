@@ -26,7 +26,7 @@ test('Web API 返回模板配置并在 hosts 目录生成文件', async (context
   assert.ok(config.ipOptions.includes('6.120.39.72'));
   assert.ok(config.ipOptions.includes('11.125.76.107'));
   assert.ok(config.domainOptions['keeper-qua-audit'].includes('qua-audit.jdtest.net'));
-  assert.ok(config.domainOptions['keeper-qua-audit'].includes('qua-audit-seller-v10.shop.jd.com'));
+  assert.ok(config.domainOptions['keeper-qua-audit'].includes('seller-v10.shop.jd.com'));
   assert.ok(config.domainOptions['keeper-qua-audit'].includes('man-keeper.jd.com'));
 
   const createResponse = await fetch(`${baseUrl}/api/hosts`, {

@@ -45,7 +45,7 @@ test('前端字典定义三个仓库、十二个模块和二十三条路由', ()
       domain: 'man-keeper.jd.com'
     });
     assert.equal(repository.environments.staging.ip, '6.120.39.72');
-    assert.match(repository.environments.staging.domain, /-seller-v10\.shop\.jd\.com$/u);
+    assert.equal(repository.environments.staging.domain, 'seller-v10.shop.jd.com');
     assert.equal(new Set(repository.modules.map((module) => module.id)).size, repository.modules.length);
     for (const module of repository.modules) {
       assert.ok(module.routes.length >= 1);
