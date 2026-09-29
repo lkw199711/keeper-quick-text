@@ -39,6 +39,11 @@ const elements = {
   savedEnvironmentList: document.querySelector('#saved-environment-list'),
   savedEnvironmentCount: document.querySelector('#saved-environment-count'),
   deploymentEnvironmentList: document.querySelector('#deployment-environment-list'),
+  showStandardTestButton: document.querySelector('#show-standard-test-button'),
+  standardTestDialog: document.querySelector('#standard-test-dialog'),
+  standardTestContent: document.querySelector('#standard-test-content'),
+  copyStandardTestButton: document.querySelector('#copy-standard-test-button'),
+  copyStandardTestLabel: document.querySelector('#copy-standard-test-label'),
   repositoryList: document.querySelector('#repository-list'),
   moduleList: document.querySelector('#module-list'),
   moduleSummary: document.querySelector('#module-summary'),
@@ -135,6 +140,8 @@ function selectDeploymentEnvironment(environmentId, { keepEditing = false } = {}
 }
 
 function bindEvents() {
+  elements.showStandardTestButton.addEventListener('click', openStandardTestDialog);
+  elements.copyStandardTestButton.addEventListener('click', copyStandardTestContent);
   elements.selectAllButton.addEventListener('click', selectAllModules);
   elements.clearAllButton.addEventListener('click', clearAllModules);
   elements.copyPreviewButton.addEventListener('click', copyPreviewContent);
@@ -147,6 +154,36 @@ function bindEvents() {
   elements.confirmDeleteEnvironmentButton.addEventListener('click', deleteSavedEnvironment);
   elements.deleteEnvironmentDialog.addEventListener('close', () => {
     state.pendingDeleteEnvironmentId = undefined;
+  });
+}
+
+function openStandardTestDialog() {
+  elements.standardTestContent.textContent = createStandardTestHostsContent();
+  elements.copyStandardTestLabel.textContent = '复制内容';
+  elements.standardTestDialog.showModal();
+}
+
+async function copyStandardTestContent() {
+  try {
+    await writeClipboardText(elements.standardTestContent.textContent);
+    elements.copyStandardTestLabel.textContent = '已复制';
+    setTimeout(() => {
+      elements.copyStandardTestLabel.textContent = '复制内容';
+    }, 1600);
+  } catch {
+    elements.copyStandardTestLabel.textContent = '复制失败';
+  }
+}
+
+function createStandardTestHostsContent() {
+  const deploymentEnvironment = findDeploymentEnvironment(DEFAULT_DEPLOYMENT_ENVIRONMENT_ID);
+  return createHostsContent({
+    deploymentEnvironment,
+    selections: REPOSITORY_CATALOG.map((repository) => ({
+      repository,
+      modules: repository.modules,
+      ...getRepositoryEnvironmentAddress(repository, DEFAULT_DEPLOYMENT_ENVIRONMENT_ID)
+    }))
   });
 }
 

@@ -50,6 +50,9 @@
               <h2 id="environment-heading">选择部署环境</h2>
               <p>默认使用测试环境；切换后会带入各仓库在字典中配置的 IP 和域名。</p>
             </div>
+            <button id="show-standard-test-button" class="text-button environment-reference-button" type="button">
+              查看标准测试环境
+            </button>
           </div>
           <div id="deployment-environment-list" class="deployment-environment-grid" aria-live="polite"></div>
         </section>
@@ -155,6 +158,29 @@
         <div class="dialog-actions">
           <button class="secondary-button" value="cancel">返回修改</button>
           <button id="confirm-button" class="primary-button" value="default">生成文件</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="standard-test-dialog" class="standard-test-dialog">
+      <form method="dialog">
+        <button class="dialog-close" value="cancel" aria-label="关闭">×</button>
+        <div class="standard-test-heading">
+          <div>
+            <p class="eyebrow">STANDARD TEST HOSTS</p>
+            <h2>标准测试环境</h2>
+            <p>包含全部仓库和业务模块，内容实时取自前端路由字典。</p>
+          </div>
+          <button id="copy-standard-test-button" class="standard-test-copy-button" type="button">
+            <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16">
+              <path d="M8 7V5a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2M5 8h9a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-9a2 2 0 0 1 2-2Z"/>
+            </svg>
+            <span id="copy-standard-test-label">复制内容</span>
+          </button>
+        </div>
+        <pre id="standard-test-content" tabindex="0"></pre>
+        <div class="dialog-actions">
+          <button class="secondary-button" value="cancel">关闭</button>
         </div>
       </form>
     </dialog>
