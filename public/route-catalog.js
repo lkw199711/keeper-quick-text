@@ -73,7 +73,7 @@ export const REPOSITORY_CATALOG = [
   {
     id: 'keeper-qua-audit',
     name: 'keeper-qua-audit',
-    description: 'POP 品牌与类目审核',
+    description: 'POP 品牌与类目、供应商黄标审核',
     environments: {
       test: { ip: '6.120.39.72', domain: 'qua-audit.jdtest.net' },
       staging: { ip: '6.120.39.72', domain: 'seller-v10.shop.jd.com' },
@@ -96,6 +96,15 @@ export const REPOSITORY_CATALOG = [
         routes: [
           { id: 'audit', name: 'pop类目审核', type: 'audit', path: '/keeper/qua-audit/categoryAudit' },
           { id: 'query', name: 'pop类目查询', type: 'query', path: '/keeper/qua-audit/categoryQuery' }
+        ]
+      },
+      {
+        id: 'supplier-tag',
+        name: '供应商黄标',
+        description: '供应商黄标审核与查询',
+        routes: [
+          { id: 'audit', name: '供应商黄标审核', type: 'audit', path: '/keeper/qua-audit/supplierTagAudit' },
+          { id: 'query', name: '供应商黄标查询', type: 'query', path: '/keeper/qua-audit/supplierTagQuery' }
         ]
       }
     ]

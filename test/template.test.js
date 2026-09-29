@@ -18,7 +18,7 @@ import {
 
 const templateFile = fileURLToPath(new URL('../hosts/标准测试环境.hosts', import.meta.url));
 
-test('前端字典定义三个仓库、十一个模块和二十一条路由', () => {
+test('前端字典定义三个仓库、十二个模块和二十三条路由', () => {
   assert.equal(DEFAULT_DEPLOYMENT_ENVIRONMENT_ID, 'test');
   assert.deepEqual(DEPLOYMENT_ENVIRONMENTS.map((environment) => environment.id), [
     'test',
@@ -33,7 +33,7 @@ test('前端字典定义三个仓库、十一个模块和二十一条路由', ()
     })),
     [
       { id: 'keeper-sell-supplier', modules: 5, routes: 10 },
-      { id: 'keeper-qua-audit', modules: 2, routes: 4 },
+      { id: 'keeper-qua-audit', modules: 3, routes: 6 },
       { id: 'keeper-second-review', modules: 4, routes: 7 }
     ]
   );

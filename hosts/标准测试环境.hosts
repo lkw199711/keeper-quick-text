@@ -30,6 +30,10 @@
 #https://qua-audit.jdtest.net/keeper/qua-audit/categoryAudit
 #pop类目查询
 #https://qua-audit.jdtest.net/keeper/qua-audit/categoryQuery
+#供应商黄标审核
+#https://qua-audit.jdtest.net/keeper/qua-audit/supplierTagAudit
+#供应商黄标查询
+#https://qua-audit.jdtest.net/keeper/qua-audit/supplierTagQuery
 
 6.120.39.72		second-review.jdtest.net
 #门店资质审核
