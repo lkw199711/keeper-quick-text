@@ -109,6 +109,11 @@
               <p id="output-description">核对替换结果后生成 hosts 文件。</p>
             </div>
           </div>
+          <label class="environment-title-field" for="environment-title-input">
+            <span>保存标题 <small>选填</small></span>
+            <input id="environment-title-input" type="text" maxlength="60" placeholder="例如：供应商审核联调环境" autocomplete="off">
+            <small>生成文件或仅保存环境时一并记录；留空时标题保持为空。</small>
+          </label>
           <div class="preview-card">
             <div class="preview-toolbar">
               <div>
@@ -147,6 +152,7 @@
         <p class="eyebrow">FINAL CHECK</p>
         <h2>确认生成 hosts 文件？</h2>
         <dl class="confirm-list">
+          <div><dt>保存标题</dt><dd id="confirm-title">未填写</dd></div>
           <div><dt>部署环境</dt><dd id="confirm-environment">—</dd></div>
           <div><dt>仓库</dt><dd id="confirm-repository">—</dd></div>
           <div><dt>模块</dt><dd id="confirm-modules">—</dd></div>

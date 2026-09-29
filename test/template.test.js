@@ -90,6 +90,7 @@ test('只生成所选模块并替换 IP 和域名', () => {
 
   assert.match(content, /# 模块: POP 品牌/u);
   assert.match(content, /# 环境: 测试环境/u);
+  assert.match(content, /# 生成时间: 2026-09-21 14:30:00/u);
   assert.match(content, /10\.1\.2\.3\t\tqua-preview\.example\.com/u);
   assert.match(content, /https:\/\/qua-preview\.example\.com\/keeper\/qua-audit\/brandAudit/u);
   assert.doesNotMatch(content, /categoryAudit/u);

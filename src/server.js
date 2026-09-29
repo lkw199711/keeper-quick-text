@@ -68,6 +68,7 @@ export function createAppServer(options = {}) {
         return sendJson(response, 201, {
           filename,
           relativePath: `hosts/${filename}`,
+          generatedAt: now.toISOString(),
           content
         });
       }

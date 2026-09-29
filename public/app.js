@@ -55,6 +55,7 @@ const elements = {
   routeCount: document.querySelector('#route-count'),
   copyPreviewButton: document.querySelector('#copy-preview-button'),
   copyPreviewLabel: document.querySelector('#copy-preview-label'),
+  environmentTitleInput: document.querySelector('#environment-title-input'),
   saveOnlyButton: document.querySelector('#save-only-button'),
   generateButton: document.querySelector('#generate-button'),
   generateActionLabel: document.querySelector('#generate-action-label'),
@@ -65,6 +66,7 @@ const elements = {
   dialog: document.querySelector('#confirm-dialog'),
   dialogNote: document.querySelector('#dialog-note'),
   confirmButton: document.querySelector('#confirm-button'),
+  confirmTitle: document.querySelector('#confirm-title'),
   confirmEnvironment: document.querySelector('#confirm-environment'),
   confirmRepository: document.querySelector('#confirm-repository'),
   confirmModules: document.querySelector('#confirm-modules'),
@@ -333,27 +335,31 @@ function renderSavedEnvironments() {
       return repository?.modules.filter((module) => selection.moduleIds.includes(module.id)) || [];
     });
     const environmentLabel = formatEnvironmentDomains(environment);
+    const displayName = environment.title;
+    const accessibleName = formatSavedEnvironmentReference(environment);
     const card = document.createElement('article');
     card.className = 'saved-environment-card';
     if (environment.id === state.editingEnvironmentId) card.dataset.editing = 'true';
     card.innerHTML = `
       <div class="saved-environment-card-heading">
         <div>
-          <strong>${escapeHtml(environmentLabel)}</strong>
+          <strong>${escapeHtml(displayName)}</strong>
           <span>${escapeHtml(repositories.map((repository) => repository.name).join('、'))}</span>
         </div>
         ${environment.id === state.editingEnvironmentId ? '<span class="editing-badge">编辑中</span>' : ''}
       </div>
       <dl class="saved-environment-details">
         <div><dt>环境</dt><dd>${escapeHtml(findDeploymentEnvironment(environment.deploymentEnvironmentId)?.name || '测试环境')}</dd></div>
+        <div><dt>域名</dt><dd>${escapeHtml(environmentLabel)}</dd></div>
         <div><dt>IP</dt><dd>${escapeHtml(formatEnvironmentIps(environment))}</dd></div>
+        <div><dt>生成</dt><dd>${escapeHtml(formatGeneratedTime(environment.generatedAt))}</dd></div>
         <div><dt>模块</dt><dd>${escapeHtml(modules.map((module) => module.name).join('、'))}</dd></div>
       </dl>
       <div class="saved-environment-footer">
         <time datetime="${escapeHtml(environment.updatedAt)}">${escapeHtml(formatSavedTime(environment.updatedAt))}</time>
         <div class="saved-environment-actions">
-          <button class="edit-environment-button" type="button" aria-label="编辑 ${escapeHtml(environmentLabel)}">编辑</button>
-          <button class="delete-environment-button" type="button" aria-label="删除 ${escapeHtml(environmentLabel)}">删除</button>
+          <button class="edit-environment-button" type="button" aria-label="编辑 ${escapeHtml(accessibleName)}">编辑</button>
+          <button class="delete-environment-button" type="button" aria-label="删除 ${escapeHtml(accessibleName)}">删除</button>
         </div>
       </div>
     `;
@@ -381,9 +387,11 @@ function editSavedEnvironment(environmentId) {
     selection.repositoryId,
     { ip: selection.ip, domain: selection.domain }
   ]));
+  elements.environmentTitleInput.value = environment.title;
   renderDeploymentEnvironments();
   syncRepositorySelectionUi();
-  showMessage(`正在编辑 ${formatEnvironmentDomains(environment)}，重新生成后会更新该环境。`, 'success');
+  renderPreviewWithGeneratedAt(new Date(environment.generatedAt));
+  showMessage(`正在编辑${environment.title ? `「${environment.title}」` : '未命名环境'}，重新生成后会更新该环境。`, 'success');
   document.querySelector('#repo-heading').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
@@ -392,7 +400,7 @@ function openDeleteEnvironmentConfirmation(environmentId) {
   if (!environment) return;
 
   state.pendingDeleteEnvironmentId = environment.id;
-  elements.deleteEnvironmentDomain.textContent = formatEnvironmentDomains(environment);
+  elements.deleteEnvironmentDomain.textContent = formatSavedEnvironmentReference(environment);
   elements.deleteEnvironmentDialog.showModal();
 }
 
@@ -419,7 +427,7 @@ function deleteSavedEnvironment() {
   if (state.editingEnvironmentId === environmentId) state.editingEnvironmentId = undefined;
   elements.deleteEnvironmentDialog.close();
   renderSavedEnvironments();
-  showMessage(`已删除环境 ${formatEnvironmentDomains(environment)}。`, 'success');
+  showMessage(`已删除${environment.title ? `环境「${environment.title}」` : '未命名环境'}。`, 'success');
 }
 
 function renderModules() {
@@ -498,6 +506,7 @@ function updatePreview() {
   }
   const modules = getSelectedModules();
   const selections = getSelectedSelections();
+  elements.confirmTitle.textContent = getEnvironmentTitle() || '未填写';
   const addressesPresent = selections.every((selection) => selection.ip && selection.domain);
   const inputValid = selections.every((selection) => (
     isIp(selection.ip) && isHostname(selection.domain)
@@ -586,19 +595,26 @@ function saveEnvironmentOnly() {
   updatePreview();
   if (elements.saveOnlyButton.disabled) return;
 
-  const environmentLabel = getSelectedSelections().map((selection) => selection.domain).join('、');
+  const confirmedAt = new Date();
+  const environmentTitle = getEnvironmentTitle();
   const wasEditing = Boolean(state.editingEnvironmentId);
   const savedEnvironment = saveLocalEnvironment({
+    title: getEnvironmentTitle(),
+    generatedAt: confirmedAt.toISOString(),
     deploymentEnvironmentId: state.selectedEnvironmentId,
     repositoryIds: [...state.selectedRepositoryIds],
     selections: serializeSelectedSelections()
-  });
+  }, confirmedAt);
 
   if (!savedEnvironment) {
     showMessage('环境保存失败，请检查浏览器是否允许本地存储。', 'error');
     return;
   }
-  showMessage(`${wasEditing ? '已更新' : '已保存'}环境 ${environmentLabel}，未生成或下载文件。`, 'success');
+  renderPreviewWithGeneratedAt(confirmedAt);
+  showMessage(
+    `${wasEditing ? '已更新' : '已保存'}环境${environmentTitle ? `「${environmentTitle}」` : ''}并确认生成时间，未生成或下载文件。`,
+    'success'
+  );
 }
 
 async function generateFile() {
@@ -609,10 +625,14 @@ async function generateFile() {
 
   try {
     let result;
+    let confirmedAt;
     if (usesServer()) {
       result = await generateOnServer();
+      confirmedAt = new Date(result.generatedAt);
+      if (Number.isNaN(confirmedAt.getTime())) confirmedAt = new Date();
     } else {
       const now = new Date();
+      confirmedAt = now;
       const repositoryIds = [...state.selectedRepositoryIds];
       result = {
         filename: createOutputFilename(
@@ -639,6 +659,8 @@ async function generateFile() {
       }
     }
     saveLocalEnvironment({
+      title: getEnvironmentTitle(),
+      generatedAt: confirmedAt.toISOString(),
       deploymentEnvironmentId: state.selectedEnvironmentId,
       repositoryIds: [...state.selectedRepositoryIds],
       selections: serializeSelectedSelections()
@@ -791,15 +813,22 @@ function normalizeSavedEnvironment(environment) {
   const deploymentEnvironmentId = findDeploymentEnvironment(environment.deploymentEnvironmentId)
     ? environment.deploymentEnvironmentId
     : DEFAULT_DEPLOYMENT_ENVIRONMENT_ID;
-  return { ...environment, deploymentEnvironmentId, repositoryIds, selections };
+  const title = String(environment.title || '').trim().slice(0, 60);
+  const parsedGeneratedAt = new Date(environment.generatedAt || environment.updatedAt);
+  const generatedAt = Number.isNaN(parsedGeneratedAt.getTime())
+    ? new Date().toISOString()
+    : parsedGeneratedAt.toISOString();
+  return { ...environment, title, generatedAt, deploymentEnvironmentId, repositoryIds, selections };
 }
 
-function saveLocalEnvironment(environment) {
+function saveLocalEnvironment(environment, savedAt = new Date()) {
   try {
     const environments = readSavedEnvironments();
     const existing = state.editingEnvironmentId
       ? environments.find((item) => item.id === state.editingEnvironmentId)
       : environments.find((item) => (
+        item.title === environment.title
+        &&
         item.deploymentEnvironmentId === environment.deploymentEnvironmentId
         &&
         repositorySetKey(item.repositoryIds) === repositorySetKey(environment.repositoryIds)
@@ -808,7 +837,7 @@ function saveLocalEnvironment(environment) {
     const savedEnvironment = {
       ...environment,
       id: existing?.id || createEnvironmentId(),
-      updatedAt: new Date().toISOString()
+      updatedAt: savedAt.toISOString()
     };
     const nextEnvironments = [
       savedEnvironment,
@@ -837,6 +866,21 @@ function formatSavedTime(value) {
     day: '2-digit',
     hour: '2-digit',
     minute: '2-digit',
+    hour12: false
+  }).format(date).replaceAll('/', '-');
+}
+
+function formatGeneratedTime(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  return new Intl.DateTimeFormat('zh-CN', {
+    timeZone: 'Asia/Shanghai',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
     hour12: false
   }).format(date).replaceAll('/', '-');
 }
@@ -933,6 +977,22 @@ function formatEnvironmentDomains(environment) {
 
 function formatEnvironmentIps(environment) {
   return environment.selections.map((selection) => selection.ip).join('、');
+}
+
+function formatSavedEnvironmentReference(environment) {
+  return environment.title || '未命名环境';
+}
+
+function getEnvironmentTitle() {
+  return elements.environmentTitleInput.value.trim().slice(0, 60);
+}
+
+function renderPreviewWithGeneratedAt(generatedAt) {
+  elements.previewContent.textContent = createHostsContent({
+    deploymentEnvironment: getSelectedDeploymentEnvironment(),
+    selections: getSelectedSelections(),
+    generatedAt
+  });
 }
 
 function countRoutes(modules) {

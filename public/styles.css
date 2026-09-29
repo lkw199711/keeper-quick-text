@@ -526,6 +526,50 @@ h1 {
 
 .field small { color: var(--muted); }
 
+.environment-title-field {
+  display: grid;
+  grid-template-columns: 170px minmax(240px, 1fr);
+  align-items: center;
+  gap: 8px 16px;
+  margin-bottom: 16px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface);
+  padding: 16px 18px;
+}
+
+.environment-title-field > span {
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.environment-title-field > span small {
+  margin-left: 5px;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.environment-title-field input {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  outline: none;
+  background: white;
+  padding: 12px 14px;
+  color: var(--ink);
+}
+
+.environment-title-field input:focus {
+  border-color: var(--green);
+  box-shadow: 0 0 0 3px rgba(25, 107, 69, 0.10);
+}
+
+.environment-title-field > small {
+  grid-column: 2;
+  color: var(--muted);
+  font-size: 11px;
+}
+
 .preview-card {
   overflow: hidden;
   border: 1px solid #233329;
@@ -776,6 +820,8 @@ pre {
   .action-row { align-items: stretch; flex-direction: column; }
   .action-buttons { align-items: stretch; flex-direction: column; width: 100%; }
   .action-buttons .primary-button, .action-buttons .secondary-button { width: 100%; }
+  .environment-title-field { grid-template-columns: 1fr; }
+  .environment-title-field > small { grid-column: 1; }
   .standard-test-dialog form { padding: 22px; }
   .standard-test-heading { align-items: stretch; flex-direction: column; padding-right: 32px; }
   .standard-test-copy-button { justify-content: center; }

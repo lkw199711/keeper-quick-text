@@ -43,6 +43,7 @@ test('Web API 返回模板配置并在 hosts 目录生成文件', async (context
   const result = await createResponse.json();
 
   assert.equal(createResponse.status, 201);
+  assert.match(result.generatedAt, /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/u);
   assert.match(result.relativePath, /^hosts\/keeper-qua-audit-qua-preview\.example\.com-\d{14}\.hosts$/u);
   assert.equal(await readFile(join(temporaryRoot, result.relativePath), 'utf8'), result.content);
   assert.match(result.content, /# 环境: 线上环境/u);
