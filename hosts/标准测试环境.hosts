@@ -20,6 +20,10 @@
 #https://sell-supplier.jdtest.net/keeper/seller-supplier/mySettledCredential
 #pop入驻查询
 #https://sell-supplier.jdtest.net/keeper/seller-supplier/settledQuery
+#专项资质审核
+#https://sell-supplier.jdtest.net/keeper/seller-supplier/special-quality-review-me
+#专项资质查询
+#https://sell-supplier.jdtest.net/keeper/seller-supplier/special-quality-review-query
 
 6.120.39.72		qua-audit.jdtest.net
 #pop品牌审核

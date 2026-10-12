@@ -67,6 +67,15 @@ export const REPOSITORY_CATALOG = [
           { id: 'audit', name: 'pop入驻审核', type: 'audit', path: '/keeper/seller-supplier/mySettledCredential' },
           { id: 'query', name: 'pop入驻查询', type: 'query', path: '/keeper/seller-supplier/settledQuery' }
         ]
+      },
+      {
+        id: 'special-qualification',
+        name: '专项资质',
+        description: '专项资质审核与查询',
+        routes: [
+          { id: 'audit', name: '专项资质审核', type: 'audit', path: '/keeper/seller-supplier/special-quality-review-me' },
+          { id: 'query', name: '专项资质查询', type: 'query', path: '/keeper/seller-supplier/special-quality-review-query' }
+        ]
       }
     ]
   },

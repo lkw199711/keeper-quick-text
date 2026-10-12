@@ -18,7 +18,7 @@ import {
 
 const templateFile = fileURLToPath(new URL('../hosts/标准测试环境.hosts', import.meta.url));
 
-test('前端字典定义三个仓库、十二个模块和二十三条路由', () => {
+test('前端字典定义三个仓库、十三个模块和二十五条路由', () => {
   assert.equal(DEFAULT_DEPLOYMENT_ENVIRONMENT_ID, 'test');
   assert.deepEqual(DEPLOYMENT_ENVIRONMENTS.map((environment) => environment.id), [
     'test',
@@ -32,7 +32,7 @@ test('前端字典定义三个仓库、十二个模块和二十三条路由', ()
       routes: getRepositoryRouteCount(repository)
     })),
     [
-      { id: 'keeper-sell-supplier', modules: 5, routes: 10 },
+      { id: 'keeper-sell-supplier', modules: 6, routes: 12 },
       { id: 'keeper-qua-audit', modules: 3, routes: 6 },
       { id: 'keeper-second-review', modules: 4, routes: 7 }
     ]
@@ -53,6 +53,11 @@ test('前端字典定义三个仓库、十二个模块和二十三条路由', ()
       assert.ok(module.routes.every((route) => ['audit', 'query'].includes(route.type)));
     }
   }
+
+  assert.deepEqual(
+    REPOSITORY_CATALOG[0].modules.slice(-2).map((module) => module.id),
+    ['pop-onboarding', 'special-qualification']
+  );
 });
 
 test('前端字典与标准测试环境中的 IP、域名和路由保持一致', async () => {
