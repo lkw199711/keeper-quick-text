@@ -37,7 +37,8 @@ test('Web API 返回模板配置并在 hosts 目录生成文件', async (context
       repositoryId: 'keeper-qua-audit',
       moduleIds: ['pop-brand'],
       ip: '10.2.3.4',
-      domain: 'qua-preview.example.com'
+      domain: 'qua-preview.example.com',
+      relatedBranch: 'feature/production-audit'
     })
   });
   const result = await createResponse.json();
@@ -47,6 +48,7 @@ test('Web API 返回模板配置并在 hosts 目录生成文件', async (context
   assert.match(result.relativePath, /^hosts\/keeper-qua-audit-qua-preview\.example\.com-\d{14}\.hosts$/u);
   assert.equal(await readFile(join(temporaryRoot, result.relativePath), 'utf8'), result.content);
   assert.match(result.content, /# 环境: 线上环境/u);
+  assert.match(result.content, /# 关联分支: feature\/production-audit/u);
   assert.match(result.content, /#pop品牌审核\n#https:\/\/qua-preview\.example\.com\/keeper\/qua-audit\/brandAudit/u);
 
   const multiResponse = await fetch(`${baseUrl}/api/hosts`, {

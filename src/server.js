@@ -53,6 +53,7 @@ export function createAppServer(options = {}) {
           selections,
           ip,
           domain,
+          relatedBranch: payload.relatedBranch,
           deploymentEnvironmentId: payload.deploymentEnvironmentId,
           generatedAt: now
         });

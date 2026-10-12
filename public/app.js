@@ -56,6 +56,7 @@ const elements = {
   copyPreviewButton: document.querySelector('#copy-preview-button'),
   copyPreviewLabel: document.querySelector('#copy-preview-label'),
   environmentTitleInput: document.querySelector('#environment-title-input'),
+  relatedBranchInput: document.querySelector('#related-branch-input'),
   saveOnlyButton: document.querySelector('#save-only-button'),
   generateButton: document.querySelector('#generate-button'),
   generateActionLabel: document.querySelector('#generate-action-label'),
@@ -67,6 +68,7 @@ const elements = {
   dialogNote: document.querySelector('#dialog-note'),
   confirmButton: document.querySelector('#confirm-button'),
   confirmTitle: document.querySelector('#confirm-title'),
+  confirmRelatedBranch: document.querySelector('#confirm-related-branch'),
   confirmEnvironment: document.querySelector('#confirm-environment'),
   confirmRepository: document.querySelector('#confirm-repository'),
   confirmModules: document.querySelector('#confirm-modules'),
@@ -147,6 +149,7 @@ function bindEvents() {
   elements.selectAllButton.addEventListener('click', selectAllModules);
   elements.clearAllButton.addEventListener('click', clearAllModules);
   elements.copyPreviewButton.addEventListener('click', copyPreviewContent);
+  elements.relatedBranchInput.addEventListener('input', updatePreview);
   elements.saveOnlyButton.addEventListener('click', saveEnvironmentOnly);
   elements.generateButton.addEventListener('click', openConfirmation);
   elements.confirmButton.addEventListener('click', (event) => {
@@ -350,6 +353,7 @@ function renderSavedEnvironments() {
       </div>
       <dl class="saved-environment-details">
         <div><dt>环境</dt><dd>${escapeHtml(findDeploymentEnvironment(environment.deploymentEnvironmentId)?.name || '测试环境')}</dd></div>
+        ${environment.relatedBranch ? `<div><dt>分支</dt><dd>${escapeHtml(environment.relatedBranch)}</dd></div>` : ''}
         <div><dt>域名</dt><dd>${escapeHtml(environmentLabel)}</dd></div>
         <div><dt>IP</dt><dd>${escapeHtml(formatEnvironmentIps(environment))}</dd></div>
         <div><dt>生成</dt><dd>${escapeHtml(formatGeneratedTime(environment.generatedAt))}</dd></div>
@@ -388,6 +392,7 @@ function editSavedEnvironment(environmentId) {
     { ip: selection.ip, domain: selection.domain }
   ]));
   elements.environmentTitleInput.value = environment.title;
+  elements.relatedBranchInput.value = environment.relatedBranch;
   renderDeploymentEnvironments();
   syncRepositorySelectionUi();
   renderPreviewWithGeneratedAt(new Date(environment.generatedAt));
@@ -520,6 +525,7 @@ function updatePreview() {
   elements.routeCount.textContent = `${modules.length} 个模块 · ${countRoutes(modules)} 条路由`;
   elements.previewContent.textContent = createHostsContent({
     deploymentEnvironment: getSelectedDeploymentEnvironment(),
+    relatedBranch: getRelatedBranch(),
     selections: selections.map((selection) => ({
       ...selection,
       ip: selection.ip || '<IP>',
@@ -582,6 +588,7 @@ function openConfirmation() {
 
   const modules = getSelectedModules();
   const selections = getSelectedSelections();
+  elements.confirmRelatedBranch.textContent = getRelatedBranch() || '未填写';
   elements.confirmEnvironment.textContent = getSelectedDeploymentEnvironment().name;
   elements.confirmRepository.textContent = getSelectedRepositories().map((repository) => repository.name).join('、');
   elements.confirmModules.textContent = modules.map((module) => module.name).join('、');
@@ -600,6 +607,7 @@ function saveEnvironmentOnly() {
   const wasEditing = Boolean(state.editingEnvironmentId);
   const savedEnvironment = saveLocalEnvironment({
     title: getEnvironmentTitle(),
+    relatedBranch: getRelatedBranch(),
     generatedAt: confirmedAt.toISOString(),
     deploymentEnvironmentId: state.selectedEnvironmentId,
     repositoryIds: [...state.selectedRepositoryIds],
@@ -643,6 +651,7 @@ async function generateFile() {
         content: createHostsContent({
           deploymentEnvironment: getSelectedDeploymentEnvironment(),
           selections,
+          relatedBranch: getRelatedBranch(),
           generatedAt: now
         })
       };
@@ -660,6 +669,7 @@ async function generateFile() {
     }
     saveLocalEnvironment({
       title: getEnvironmentTitle(),
+      relatedBranch: getRelatedBranch(),
       generatedAt: confirmedAt.toISOString(),
       deploymentEnvironmentId: state.selectedEnvironmentId,
       repositoryIds: [...state.selectedRepositoryIds],
@@ -685,6 +695,7 @@ async function generateOnServer() {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       deploymentEnvironmentId: state.selectedEnvironmentId,
+      relatedBranch: getRelatedBranch(),
       selections: serializeSelectedSelections()
     })
   });
@@ -814,11 +825,20 @@ function normalizeSavedEnvironment(environment) {
     ? environment.deploymentEnvironmentId
     : DEFAULT_DEPLOYMENT_ENVIRONMENT_ID;
   const title = String(environment.title || '').trim().slice(0, 60);
+  const relatedBranch = String(environment.relatedBranch || '').trim().slice(0, 200);
   const parsedGeneratedAt = new Date(environment.generatedAt || environment.updatedAt);
   const generatedAt = Number.isNaN(parsedGeneratedAt.getTime())
     ? new Date().toISOString()
     : parsedGeneratedAt.toISOString();
-  return { ...environment, title, generatedAt, deploymentEnvironmentId, repositoryIds, selections };
+  return {
+    ...environment,
+    title,
+    relatedBranch,
+    generatedAt,
+    deploymentEnvironmentId,
+    repositoryIds,
+    selections
+  };
 }
 
 function saveLocalEnvironment(environment, savedAt = new Date()) {
@@ -828,6 +848,8 @@ function saveLocalEnvironment(environment, savedAt = new Date()) {
       ? environments.find((item) => item.id === state.editingEnvironmentId)
       : environments.find((item) => (
         item.title === environment.title
+        &&
+        item.relatedBranch === environment.relatedBranch
         &&
         item.deploymentEnvironmentId === environment.deploymentEnvironmentId
         &&
@@ -987,10 +1009,15 @@ function getEnvironmentTitle() {
   return elements.environmentTitleInput.value.trim().slice(0, 60);
 }
 
+function getRelatedBranch() {
+  return elements.relatedBranchInput.value.trim().slice(0, 200);
+}
+
 function renderPreviewWithGeneratedAt(generatedAt) {
   elements.previewContent.textContent = createHostsContent({
     deploymentEnvironment: getSelectedDeploymentEnvironment(),
     selections: getSelectedSelections(),
+    relatedBranch: getRelatedBranch(),
     generatedAt
   });
 }

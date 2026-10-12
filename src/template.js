@@ -59,19 +59,33 @@ export function createHostsDocument({
   selections,
   ip,
   domain,
+  relatedBranch,
   deploymentEnvironmentId = DEFAULT_DEPLOYMENT_ENVIRONMENT_ID,
   generatedAt = new Date()
 }) {
   const deploymentEnvironment = findDeploymentEnvironment(deploymentEnvironmentId);
   if (!deploymentEnvironment) throw new Error('请选择有效的部署环境。');
   const validatedSelections = validateGenerationInput({ repository, moduleIds, selections, ip, domain });
+  const validatedRelatedBranch = validateRelatedBranch(relatedBranch);
   return createHostsContent({
     deploymentEnvironment,
     selections: validatedSelections,
     ip,
     domain,
+    relatedBranch: validatedRelatedBranch,
     generatedAt
   });
+}
+
+export function validateRelatedBranch(value) {
+  const relatedBranch = String(value || '').trim();
+  if (relatedBranch.length > 200) {
+    throw new Error('关联分支不能超过 200 个字符。');
+  }
+  if (/[\u0000-\u001f\u007f]/u.test(relatedBranch)) {
+    throw new Error('关联分支不能包含换行或控制字符。');
+  }
+  return relatedBranch;
 }
 
 export function validateGenerationInput({ repository, moduleIds, selections, ip, domain }) {

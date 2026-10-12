@@ -90,11 +90,33 @@ test('只生成所选模块并替换 IP 和域名', () => {
 
   assert.match(content, /# 模块: POP 品牌/u);
   assert.match(content, /# 环境: 测试环境/u);
+  assert.doesNotMatch(content, /# 关联分支:/u);
   assert.match(content, /# 生成时间: 2026-09-21 14:30:00/u);
   assert.match(content, /10\.1\.2\.3\t\tqua-preview\.example\.com/u);
   assert.match(content, /https:\/\/qua-preview\.example\.com\/keeper\/qua-audit\/brandAudit/u);
   assert.doesNotMatch(content, /categoryAudit/u);
   assert.equal(parseHostsDocument(content).sections[0].routes.length, 2);
+});
+
+test('可选关联分支写入文件头，空值省略并拒绝控制字符', () => {
+  const repository = findRepository('keeper-qua-audit');
+  const input = {
+    repository,
+    moduleIds: ['pop-brand'],
+    ip: '10.1.2.3',
+    domain: 'qua-preview.example.com'
+  };
+  const content = createHostsDocument({
+    ...input,
+    relatedBranch: '  feature/pop-brand  '
+  });
+
+  assert.match(content, /# 关联分支: feature\/pop-brand/u);
+  assert.doesNotMatch(createHostsDocument(input), /# 关联分支:/u);
+  assert.throws(
+    () => createHostsDocument({ ...input, relatedBranch: 'feature/pop-brand\n# injected' }),
+    /控制字符/u
+  );
 });
 
 test('生成内容记录部署环境并拒绝未知环境', () => {

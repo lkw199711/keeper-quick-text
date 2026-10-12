@@ -526,12 +526,19 @@ h1 {
 
 .field small { color: var(--muted); }
 
+.generation-metadata-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
 .environment-title-field {
   display: grid;
   grid-template-columns: 170px minmax(240px, 1fr);
   align-items: center;
   gap: 8px 16px;
-  margin-bottom: 16px;
+  margin: 0;
   border: 1px solid var(--line);
   border-radius: 16px;
   background: var(--surface);
@@ -808,7 +815,7 @@ pre {
   .page-shell { width: min(100% - 28px, 620px); padding-top: 28px; }
   .hero { grid-template-columns: auto 1fr; }
   .status-chips { grid-column: 1 / -1; align-items: flex-start; }
-  .saved-environment-list, .deployment-environment-grid, .repository-grid, .module-grid, .field-grid { grid-template-columns: 1fr; }
+  .saved-environment-list, .deployment-environment-grid, .repository-grid, .module-grid, .field-grid, .generation-metadata-grid { grid-template-columns: 1fr; }
   .saved-environments-section { padding: 19px; }
   .saved-environments-heading { align-items: flex-start; flex-direction: column; gap: 10px; }
   .repository-card { min-height: 132px; }

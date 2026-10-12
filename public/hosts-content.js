@@ -1,4 +1,13 @@
-export function createHostsContent({ repository, modules, selections, ip, domain, deploymentEnvironment, generatedAt }) {
+export function createHostsContent({
+  repository,
+  modules,
+  selections,
+  ip,
+  domain,
+  deploymentEnvironment,
+  relatedBranch,
+  generatedAt
+}) {
   const normalizedSelections = (selections || [{ repository, modules }]).map((selection) => ({
     ...selection,
     ip: selection.ip || ip,
@@ -10,11 +19,13 @@ export function createHostsContent({ repository, modules, selections, ip, domain
   const timestamp = generatedAt
     ? formatDisplayTimestamp(generatedAt)
     : '确认后生成';
+  const normalizedRelatedBranch = String(relatedBranch || '').trim();
   const lines = [
     '# keeper-quick-text',
     `# 环境: ${deploymentEnvironment?.name || '测试环境'}`,
     `# 仓库: ${repositories.map((item) => item.name).join('、')}`,
     `# 模块: ${formatModuleNames(normalizedSelections, hasMultipleRepositories) || '尚未选择'}`,
+    ...(normalizedRelatedBranch ? [`# 关联分支: ${normalizedRelatedBranch}`] : []),
     `# 生成时间: ${timestamp}`,
     '# 路由字典: public/route-catalog.js'
   ];

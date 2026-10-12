@@ -18,6 +18,7 @@ test('前端下载与后端保存生成完全相同的内容', () => {
     repository,
     ip: '10.8.0.6',
     domain: 'review-preview.example.com',
+    relatedBranch: 'feature/review-audit',
     generatedAt: new Date('2026-09-21T08:00:00.000Z')
   };
 
