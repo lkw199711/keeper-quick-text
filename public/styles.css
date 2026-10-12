@@ -305,30 +305,44 @@ h1 {
   gap: 14px;
 }
 
-.repository-card, .loading-card {
+.repository-card-shell, .loading-card {
   position: relative;
   min-height: 150px;
-  padding: 22px;
   border: 1px solid var(--line);
   border-radius: 18px;
   background: var(--surface);
 }
 
-.repository-card {
-  text-align: left;
+.repository-card-shell {
+  overflow: hidden;
   transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
 }
 
-.repository-card:hover {
+.repository-card-shell:hover {
   transform: translateY(-2px);
   border-color: #9bb5a5;
   box-shadow: 0 14px 35px rgba(38, 67, 50, 0.08);
 }
 
-.repository-card[aria-pressed="true"] {
+.repository-card-shell[data-selected="true"] {
   border-color: var(--green);
   background: linear-gradient(145deg, #f9fffb, var(--green-soft));
   box-shadow: 0 0 0 3px rgba(25, 107, 69, 0.10);
+}
+
+.repository-card {
+  width: 100%;
+  min-height: 148px;
+  border: 0;
+  border-radius: 17px;
+  background: transparent;
+  padding: 22px;
+  text-align: left;
+  transition: background 160ms ease;
+}
+
+.repository-card[aria-pressed="true"] {
+  border-radius: 17px 17px 0 0;
 }
 
 .repository-card[aria-pressed="true"]::after {
@@ -344,6 +358,45 @@ h1 {
   color: white;
   background: var(--green);
   font-weight: 800;
+}
+
+.repository-branch-field {
+  display: none;
+  gap: 8px;
+  border-top: 1px solid rgba(25, 107, 69, 0.18);
+  padding: 14px 16px 16px;
+}
+
+.repository-card-shell[data-selected="true"] .repository-branch-field {
+  display: flex;
+  flex-direction: column;
+}
+
+.repository-branch-field > span {
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.repository-branch-field > span small {
+  margin-left: 4px;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.repository-branch-field input {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  outline: none;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 11px 12px;
+  color: var(--ink);
+}
+
+.repository-branch-field input:focus {
+  border-color: var(--green);
+  box-shadow: 0 0 0 3px rgba(25, 107, 69, 0.10);
 }
 
 .repository-name {
@@ -373,6 +426,7 @@ h1 {
 .loading-card {
   grid-column: 1 / -1;
   min-height: 90px;
+  padding: 22px;
   color: var(--muted);
 }
 
@@ -526,19 +580,12 @@ h1 {
 
 .field small { color: var(--muted); }
 
-.generation-metadata-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
-  margin-bottom: 16px;
-}
-
 .environment-title-field {
   display: grid;
   grid-template-columns: 170px minmax(240px, 1fr);
   align-items: center;
   gap: 8px 16px;
-  margin: 0;
+  margin-bottom: 16px;
   border: 1px solid var(--line);
   border-radius: 16px;
   background: var(--surface);
@@ -815,7 +862,7 @@ pre {
   .page-shell { width: min(100% - 28px, 620px); padding-top: 28px; }
   .hero { grid-template-columns: auto 1fr; }
   .status-chips { grid-column: 1 / -1; align-items: flex-start; }
-  .saved-environment-list, .deployment-environment-grid, .repository-grid, .module-grid, .field-grid, .generation-metadata-grid { grid-template-columns: 1fr; }
+  .saved-environment-list, .deployment-environment-grid, .repository-grid, .module-grid, .field-grid { grid-template-columns: 1fr; }
   .saved-environments-section { padding: 19px; }
   .saved-environments-heading { align-items: flex-start; flex-direction: column; gap: 10px; }
   .repository-card { min-height: 132px; }

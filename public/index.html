@@ -109,18 +109,11 @@
               <p id="output-description">核对替换结果后生成 hosts 文件。</p>
             </div>
           </div>
-          <div class="generation-metadata-grid">
-            <label class="environment-title-field" for="environment-title-input">
-              <span>保存标题 <small>选填</small></span>
-              <input id="environment-title-input" type="text" maxlength="60" placeholder="例如：供应商审核联调环境" autocomplete="off">
-              <small>生成文件或仅保存环境时一并记录；留空时标题保持为空。</small>
-            </label>
-            <label class="environment-title-field" for="related-branch-input">
-              <span>关联分支 <small>选填</small></span>
-              <input id="related-branch-input" type="text" maxlength="200" placeholder="例如：feature/supplier-audit" autocomplete="off">
-              <small>填写后会写入生成文件头部，并随环境配置保存。</small>
-            </label>
-          </div>
+          <label class="environment-title-field" for="environment-title-input">
+            <span>保存标题 <small>选填</small></span>
+            <input id="environment-title-input" type="text" maxlength="60" placeholder="例如：供应商审核联调环境" autocomplete="off">
+            <small>生成文件或仅保存环境时一并记录；留空时标题保持为空。</small>
+          </label>
           <div class="preview-card">
             <div class="preview-toolbar">
               <div>

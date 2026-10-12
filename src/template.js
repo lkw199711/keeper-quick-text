@@ -65,14 +65,19 @@ export function createHostsDocument({
 }) {
   const deploymentEnvironment = findDeploymentEnvironment(deploymentEnvironmentId);
   if (!deploymentEnvironment) throw new Error('请选择有效的部署环境。');
-  const validatedSelections = validateGenerationInput({ repository, moduleIds, selections, ip, domain });
-  const validatedRelatedBranch = validateRelatedBranch(relatedBranch);
+  const validatedSelections = validateGenerationInput({
+    repository,
+    moduleIds,
+    selections,
+    ip,
+    domain,
+    relatedBranch
+  });
   return createHostsContent({
     deploymentEnvironment,
     selections: validatedSelections,
     ip,
     domain,
-    relatedBranch: validatedRelatedBranch,
     generatedAt
   });
 }
@@ -88,10 +93,10 @@ export function validateRelatedBranch(value) {
   return relatedBranch;
 }
 
-export function validateGenerationInput({ repository, moduleIds, selections, ip, domain }) {
+export function validateGenerationInput({ repository, moduleIds, selections, ip, domain, relatedBranch }) {
   const requestedSelections = Array.isArray(selections)
     ? selections
-    : [{ repositoryId: repository?.id, moduleIds }];
+    : [{ repositoryId: repository?.id, moduleIds, relatedBranch }];
   const seenRepositoryIds = new Set();
   const validatedSelections = requestedSelections.map((selection) => {
     const selectedRepository = REPOSITORY_CATALOG.find((item) => item.id === selection?.repositoryId);
@@ -109,7 +114,8 @@ export function validateGenerationInput({ repository, moduleIds, selections, ip,
       repository: selectedRepository,
       modules: selectedModules,
       ip: String(selection.ip || ip || '').trim(),
-      domain: String(selection.domain || domain || '').trim().toLowerCase()
+      domain: String(selection.domain || domain || '').trim().toLowerCase(),
+      relatedBranch: validateRelatedBranch(selection.relatedBranch ?? relatedBranch)
     };
   });
 

@@ -149,13 +149,15 @@ test('跨仓库模块合并生成同一个 hosts 文件', () => {
         repositoryId: 'keeper-qua-audit',
         moduleIds: ['pop-brand'],
         ip: '10.9.8.7',
-        domain: 'qua-multi.example.com'
+        domain: 'qua-multi.example.com',
+        relatedBranch: 'feature/brand-audit'
       },
       {
         repositoryId: 'keeper-second-review',
         moduleIds: ['lbs-video'],
         ip: '10.9.8.8',
-        domain: 'review-multi.example.com'
+        domain: 'review-multi.example.com',
+        relatedBranch: 'feature/video-review'
       }
     ],
     generatedAt: new Date('2026-09-21T06:30:00.000Z')
@@ -164,6 +166,8 @@ test('跨仓库模块合并生成同一个 hosts 文件', () => {
   assert.match(content, /# 仓库: keeper-qua-audit、keeper-second-review/u);
   assert.match(content, /keeper-qua-audit \/ POP 品牌/u);
   assert.match(content, /keeper-second-review \/ LBS 视频/u);
+  assert.match(content, /# 仓库段: keeper-qua-audit\n# 关联分支: feature\/brand-audit\n10\.9\.8\.7/u);
+  assert.match(content, /# 仓库段: keeper-second-review\n# 关联分支: feature\/video-review\n10\.9\.8\.8/u);
   assert.match(content, /10\.9\.8\.7\t\tqua-multi\.example\.com/u);
   assert.match(content, /10\.9\.8\.8\t\treview-multi\.example\.com/u);
   assert.match(content, /https:\/\/qua-multi\.example\.com\/keeper\/qua-audit\/brandAudit/u);

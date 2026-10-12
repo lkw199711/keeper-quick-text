@@ -60,13 +60,15 @@ test('Web API 返回模板配置并在 hosts 目录生成文件', async (context
           repositoryId: 'keeper-qua-audit',
           moduleIds: ['pop-brand'],
           ip: '10.2.3.5',
-          domain: 'qua-multi.example.com'
+          domain: 'qua-multi.example.com',
+          relatedBranch: 'feature/brand-audit'
         },
         {
           repositoryId: 'keeper-second-review',
           moduleIds: ['lbs-video'],
           ip: '10.2.3.6',
-          domain: 'review-multi.example.com'
+          domain: 'review-multi.example.com',
+          relatedBranch: 'feature/video-review'
         }
       ]
     })
@@ -76,6 +78,8 @@ test('Web API 返回模板配置并在 hosts 目录生成文件', async (context
   assert.equal(multiResponse.status, 201);
   assert.match(multiResult.relativePath, /^hosts\/multi-repository-\d{14}\.hosts$/u);
   assert.match(multiResult.content, /# 仓库: keeper-qua-audit、keeper-second-review/u);
+  assert.match(multiResult.content, /keeper-qua-audit\n# 关联分支: feature\/brand-audit/u);
+  assert.match(multiResult.content, /keeper-second-review\n# 关联分支: feature\/video-review/u);
   assert.match(multiResult.content, /qua-multi\.example\.com\/keeper\/qua-audit\/brandAudit/u);
   assert.match(multiResult.content, /review-multi\.example\.com\/keeper\/takeout\/storeVideoAudit/u);
 });

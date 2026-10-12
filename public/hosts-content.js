@@ -11,7 +11,8 @@ export function createHostsContent({
   const normalizedSelections = (selections || [{ repository, modules }]).map((selection) => ({
     ...selection,
     ip: selection.ip || ip,
-    domain: selection.domain || domain
+    domain: selection.domain || domain,
+    relatedBranch: String(selection.relatedBranch ?? relatedBranch ?? '').trim()
   }));
   const repositories = normalizedSelections.map((selection) => selection.repository);
   const selectedModules = normalizedSelections.flatMap((selection) => selection.modules);
@@ -19,13 +20,11 @@ export function createHostsContent({
   const timestamp = generatedAt
     ? formatDisplayTimestamp(generatedAt)
     : '确认后生成';
-  const normalizedRelatedBranch = String(relatedBranch || '').trim();
   const lines = [
     '# keeper-quick-text',
     `# 环境: ${deploymentEnvironment?.name || '测试环境'}`,
     `# 仓库: ${repositories.map((item) => item.name).join('、')}`,
     `# 模块: ${formatModuleNames(normalizedSelections, hasMultipleRepositories) || '尚未选择'}`,
-    ...(normalizedRelatedBranch ? [`# 关联分支: ${normalizedRelatedBranch}`] : []),
     `# 生成时间: ${timestamp}`,
     '# 路由字典: public/route-catalog.js'
   ];
@@ -33,6 +32,7 @@ export function createHostsContent({
   for (const selection of normalizedSelections) {
     lines.push('');
     if (hasMultipleRepositories) lines.push(`# 仓库段: ${selection.repository.name}`);
+    if (selection.relatedBranch) lines.push(`# 关联分支: ${selection.relatedBranch}`);
     lines.push(`${selection.ip}\t\t${selection.domain}`);
     for (const module of selection.modules) {
       for (const route of module.routes) {
